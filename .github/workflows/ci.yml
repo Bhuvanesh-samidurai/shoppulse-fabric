@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install ruff pyyaml pytest
+      - name: Lint Python
+        run: ruff check .
+      - name: Validate contracts are YAML
+        run: |
+          python - <<'EOF'
+          import pathlib, sys, yaml
+          bad = []
+          for p in pathlib.Path("contracts").rglob("*.yml"):
+              try:
+                  yaml.safe_load(p.read_text())
+              except Exception as e:
+                  bad.append(f"{p}: {e}")
+          print("\n".join(bad) or "contracts OK")
+          sys.exit(1 if bad else 0)
+          EOF
+      - name: Unit tests
+        run: python -m pytest tests -q || [ $? -eq 5 ]  # 5 = no tests collected yet
+
+# Deploy jobs (fabric-cicd: dev on push to dev, test on push to main,
+# prod gated by the 'prod' environment) are added by the DE Manager in the CI/CD issue.

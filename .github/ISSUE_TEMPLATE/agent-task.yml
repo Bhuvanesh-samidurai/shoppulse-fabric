@@ -1,0 +1,35 @@
+name: Agent task
+description: A sub-task for one agent (usually created by the DE Manager).
+title: "[Task] "
+labels: ["type:task"]
+body:
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Owner
+      options: [de-manager, de1-pipeline, de2-modeler, bi-developer, data-scientist, me (manual)]
+    validations:
+      required: true
+  - type: input
+    id: parent
+    attributes:
+      label: Parent requirement
+      placeholder: "#12"
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What to build. Paths allowed to change.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: input
+    id: depends
+    attributes:
+      label: Depends on
+      placeholder: "#3, #4"

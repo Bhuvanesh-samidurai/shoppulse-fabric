@@ -1,0 +1,31 @@
+name: Stakeholder requirement
+description: A business need. The DE Manager splits it into agent tasks.
+title: "[Req] "
+labels: ["type:requirement"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Business question or need
+      description: What do you want to know or do, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: kpis
+    attributes:
+      label: KPIs / outputs
+      description: Measures, tables, report pages or app features expected.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How will you check it is done?
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options: [P1 - this week, P2 - next week, P3 - later]
+    validations:
+      required: true
