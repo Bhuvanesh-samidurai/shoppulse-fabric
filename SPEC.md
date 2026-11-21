@@ -85,16 +85,72 @@ Carrier events Eventstream─┤          │ Spark Structured Streaming (1-min 
 
 ## 4. Environments
 
-| Env | Fabric workspace | Branch | Deployed by | Data |
-|---|---|---|---|---|
-| Feature | `shoppulse-feat-<agent>` | `<agent>/<issue>-<name>` | The agent | 5% sample |
-| Dev | `shoppulse-dev` | `dev` | CI on merge | 5% sample |
-| Test | `shoppulse-test` | `main` | CI on merge | Full replay |
-| Prod | `shoppulse-prod` | `main` (approved run) | **Bhuvanesh only** (GitHub Environment `prod`) | Full replay |
+Each shared environment is split into a **data** workspace (lakehouses, notebooks, pipelines, eventstreams, eventhouse, SQL DB) and a **BI** workspace (semantic model, reports, dashboard, app).
 
-- **Capacity:** all workspaces sit on one Fabric Trial capacity (60 days). Record the demo before it expires.
+| Env | Fabric workspaces | Branch | Deployed by | Data |
+|---|---|---|---|---|
+| Feature | `shoppulse-feat-mgr`, `-de1`, `-de2`, `-bi`, `-ds` | `<agent>/<issue>-<name>` | The agent, into its own workspace | 5% sample |
+| Dev | `shoppulse-data-dev`, `shoppulse-bi-dev` | `dev` | `sp-ci-dev` on merge | 5% sample |
+| Test | `shoppulse-data-test`, `shoppulse-bi-test` | `main` | `sp-ci-test` on merge | Full replay |
+| Prod | `shoppulse-data-prod`, `shoppulse-bi-prod` | `main` (approved run) | `sp-ci-prod`, only after **Bhuvanesh** approves the GitHub Environment `prod` | Full replay |
+
+Data science outputs land in their own lakehouse, `lh_ml`, exposed to Gold through shortcuts.
+
+- **Capacity:** all 11 workspaces sit on one Fabric Trial capacity (60 days). Record the demo before it expires.
 - **Per-environment IDs:** connection and item IDs come from the Variable Library and `fabric/parameter.yml`. Never hard-code workspace or item IDs.
 - **Tables are not in Git.** DE2's DDL notebooks are idempotent and run after every deploy.
+
+## 4a. Identities and access
+
+**Identities.** One Entra service principal per agent, plus three for CI. No agent ever uses Bhuvanesh's login.
+
+| Identity | Used by | Where the secret lives |
+|---|---|---|
+| Bhuvanesh | Entra Global Admin, Fabric Admin, Azure Owner, GitHub owner | — |
+| `sp-agent-mgr`, `sp-agent-de1`, `sp-agent-de2`, `sp-agent-bi`, `sp-agent-ds` | That agent only | Key Vault `kv-shoppulse`, or one file per agent under `infra/secrets/` (git-ignored). Only that agent's secret is mounted into its run container. |
+| `sp-ci-dev`, `sp-ci-test` | GitHub Actions deploy jobs | GitHub repository secrets |
+| `sp-ci-prod` | The Prod deploy job only | GitHub Environment `prod` secrets |
+
+**Access matrix.** W = write, R = read only, — = no access.
+
+| Area | Bhuvanesh | Manager | DE1 | DE2 | BI | DS |
+|---|---|---|---|---|---|---|
+| Own feature workspace | Admin | W | W | W | W | W |
+| DE1 and DE2 feature workspaces | Admin | W | own only | own only | — | — |
+| Dev data: Bronze, Silver | Admin | R | R | R | — | R (Silver only) |
+| Dev data: Gold | Admin | R | R | R | R | R |
+| Dev data: `lh_ml` | Admin | R | — | R | R | R |
+| Dev SQL DB | Admin | R | R (DML in feature) | R (schema owner in feature) | — | — |
+| Dev BI workspace | Admin | R | — | — | R | R |
+| Test (data + BI) | Admin | R | R | R | R | R |
+| Prod (data + BI) | Admin | — | — | — | — | — |
+| Entra, Azure, capacity, tenant settings | Owner | — | — | — | — | — |
+
+- **Writes to Dev, Test and Prod come only from CI service principals.** Agents write only in feature workspaces.
+- **Mechanisms:**
+  - Workspace roles for feature workspaces and CI.
+  - Item sharing with ReadAll for read access to particular lakehouses.
+  - OneLake security roles for read-only users who need specific tables only.
+  - SQL `GRANT`/`DENY` on SQL endpoints and the SQL DB.
+- **Known gap: Lakehouse write access includes schema changes,** so Fabric can't separate DE2's schemas from DE1's loads there. The guard is the process: DE1 writes with schema evolution off, contract tests fail on drift, and CI blocks the PR.
+
+**Code governance.** All agents commit under Bhuvanesh's GitHub account, so the branch prefix is the agent identity.
+- **Path guard in CI:** a branch with prefix `<agent>/` may only change that agent's paths (§5 and the agent files).
+- **CODEOWNERS:** Bhuvanesh owns everything. The Manager reviews `contracts/`.
+
+**Business data governance:**
+- **Domain:** Fabric domain "Sales & Fulfilment".
+- **Endorsement:** Gold lakehouse and semantic model are Certified by Bhuvanesh.
+- **Lineage view** is used for impact checks.
+- **GDPR:**
+  - Customer data is pseudonymised in Silver.
+  - Object-level security (OLS) hides personal columns.
+  - RLS filters by Bundesland.
+  - There's a deletion-request flow, and retention is defined per contract.
+- **Stakeholders** use the Fabric App as viewers. Write-back goes through a User Data Function with EXECUTE on `wb_*` tables only.
+- **Out of scope:** sensitivity labels need Purview / Microsoft 365 E5 licences, which this tenant doesn't have.
+
+**Change rule.** Changes to permissions or this section go through a PR that Bhuvanesh approves.
 
 ## 5. Team
 
