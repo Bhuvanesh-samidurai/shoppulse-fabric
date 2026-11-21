@@ -12,3 +12,4 @@ data/
 mlruns/
 .DS_Store
 .claude/settings.local.json
+infra/secrets/
