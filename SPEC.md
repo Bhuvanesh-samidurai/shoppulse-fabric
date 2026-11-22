@@ -96,7 +96,18 @@ Each shared environment is split into a **data** workspace (lakehouses, notebook
 
 Data science outputs land in their own lakehouse, `lh_ml`, exposed to Gold through shortcuts.
 
-- **Capacity:** all 11 workspaces sit on one Fabric Trial capacity (60 days). Record the demo before it expires.
+- **Capacity:** all 11 workspaces sit on one **F2** capacity (Azure, paid from trial credit). Pause it whenever nobody is working. Record the demo before the credit runs out.
+- **F2 design rules** (about 4 Spark cores, short bursts up to about 12):
+  - **One Spark session at a time** across all workspaces. Agents run one at a time.
+  - **Small Spark pool:** small nodes, at most 2, idle timeout 10 minutes. Stop sessions when done.
+  - **No always-on Spark streaming.**
+    - Real-time path: Eventstream writes directly to Bronze and to Eventhouse.
+    - Silver and Gold run as scheduled micro-batches every 15 minutes (only while live data runs).
+  - **Live data in one environment at a time.** Dev while building, Test only during release tests, Prod for the demo. Stop the replayer otherwise.
+  - **Eventhouse:** minimum consumption off, hot cache 1 day, retention 3 days.
+  - **Delta retention:** log 7 days, deleted files 2 days. Run `OPTIMIZE` weekly.
+  - **If throttled:** first reduce the sample size (5% → 2%), then the micro-batch frequency, then retention. Check the Capacity Metrics app.
+  - **Power BI on F2:** report viewers need a Pro or trial licence (below F64). This is fine for the portfolio.
 - **Per-environment IDs:** connection and item IDs come from the Variable Library and `fabric/parameter.yml`. Never hard-code workspace or item IDs.
 - **Tables are not in Git.** DE2's DDL notebooks are idempotent and run after every deploy.
 
