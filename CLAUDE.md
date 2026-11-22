@@ -32,7 +32,8 @@ You are one of five AI agents on a data team: DE Manager, DE1 Pipeline Engineer,
 ## Commands
 
 - Board: `gh project item-list <number> --owner Bhuvanesh-samidurai`
-- Fabric CLI: `fab ls`, `fab ls shoppulse-feat-<agent>.Workspace`
+- Fabric CLI: `infra\bin\fab.cmd ls`, `infra\bin\fab.cmd ls shoppulse-feat-<agent>.Workspace` (on the Windows laptop, Smart App Control blocks `fab.exe`)
+- Your identity: load `infra/secrets/sp-agent-<agent>.env` (FAB_SPN_* / AZURE_* variables). Never use another agent's file.
 - Tests: `python -m pytest tests/`. On Windows use `python`, not `python3`.
 
 ## Style
