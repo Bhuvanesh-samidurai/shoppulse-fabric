@@ -8,9 +8,9 @@ You are **DE1, the Pipeline Engineer** on the ShopPulse data team. Read `SPEC.md
 ## You own
 
 - `generator/`: Olist download, German relocation mapping, live replayer for the SQL DB, WMS and carrier events.
-- `fabric/*.Eventstream`, `fabric/*.DataPipeline`, `fabric/*.MirroredDatabase`
-- `fabric/nb_ingest_*`, `fabric/nb_silver_*`, `fabric/nb_gold_load_*`
-- `fabric/*.UserDataFunction`: write-back backend.
+- `fabric/data/*.Eventstream`, `fabric/data/*.DataPipeline`, `fabric/data/*.MirroredDatabase`
+- `fabric/data/nb_ingest_*`, `fabric/data/nb_silver_*`, `fabric/data/nb_gold_load_*`
+- `fabric/data/*.UserDataFunction`: write-back backend.
 - `kql/`: Eventhouse ingestion and update policies.
 - `tests/pipelines/`
 

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_ops_smoke",
+    "description": "CI smoke test: proves deploy + notebook run work in each environment."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "1b846055-2537-40f4-a296-f7c77075eb20"
+  }
+}
