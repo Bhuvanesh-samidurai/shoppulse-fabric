@@ -1,0 +1,70 @@
+# Path ownership per agent (SPEC §4a "Code governance"). Used by infra/ci/path_guard.py.
+# A PR from branch "<prefix>/..." may only change files matching its prefix's patterns.
+# Patterns are fnmatch globs on repo-relative paths; "*" also matches "/".
+# "me" (Bhuvanesh) and release PRs from "dev" may change anything.
+# Changing this file is a permissions change: Bhuvanesh approves it (SPEC §4a change rule).
+
+mgr:
+  - ".github/*"
+  - "infra/ci/*"
+  - "tests/ci/*"
+  - "tests/integration/*"
+  - "docs/architecture.md"
+  - "docs/cicd.md"
+  - "docs/releases/*"
+  - "fabric/*/parameter.yml"
+  - "fabric/data/vl_*.VariableLibrary/*"
+  - "fabric/data/nb_ops_*.Notebook/*"
+  - "fabric/data/*.Environment/*"
+
+de1:
+  - "generator/*"
+  - "kql/*"
+  - "tests/pipelines/*"
+  - "fabric/data/nb_ingest_*.Notebook/*"
+  - "fabric/data/nb_silver_*.Notebook/*"
+  - "fabric/data/nb_gold_load_*.Notebook/*"
+  - "fabric/data/*.Eventstream/*"
+  - "fabric/data/*.DataPipeline/*"
+  - "fabric/data/*.MirroredDatabase/*"
+  - "fabric/data/*.Eventhouse/*"
+  - "fabric/data/*.KQLDatabase/*"
+  - "fabric/data/*.UserDataFunction/*"
+  - "fabric/data/*.Reflex/*"
+
+de2:
+  - "contracts/*"
+  - "sql/*"
+  - "tests/contracts/*"
+  - "docs/data-model.md"
+  - "fabric/data/nb_ddl_*.Notebook/*"
+  - "fabric/data/*.Lakehouse/*"
+  - "fabric/data/*.SQLDatabase/*"
+
+bi:
+  - "fabric/bi/*"
+  - "tests/dax/*"
+  - "docs/report-guide.md"
+
+ds:
+  - "contracts/gold/pred_*.yml"
+  - "contracts/gold/rec_*.yml"
+  - "fabric/data/nb_ml_*.Notebook/*"
+  - "fabric/data/nb_eda_*.Notebook/*"
+  - "fabric/data/*.MLExperiment/*"
+  - "fabric/data/*.MLModel/*"
+  - "docs/model-cards/*"
+  - "docs/insights/*"
+
+# Any agent may touch these (harmless placeholders).
+shared:
+  - "*/.gitkeep"
+
+# Only "me/" branches may change these, even if an agent's patterns match them.
+protected:
+  - "infra/ci/ownership.yml"
+  - ".github/CODEOWNERS"
+  - "SPEC.md"
+  - "CLAUDE.md"
+  - ".claude/*"
+  - "infra/bootstrap/*"

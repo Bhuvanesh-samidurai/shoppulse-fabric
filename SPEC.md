@@ -108,7 +108,7 @@ Data science outputs land in their own lakehouse, `lh_ml`, exposed to Gold throu
   - **Delta retention:** log 7 days, deleted files 2 days. Run `OPTIMIZE` weekly.
   - **If throttled:** first reduce the sample size (5% → 2%), then the micro-batch frequency, then retention. Check the Capacity Metrics app.
   - **Power BI on F2:** report viewers need a Pro or trial licence (below F64). This is fine for the portfolio.
-- **Per-environment IDs:** connection and item IDs come from the Variable Library and `fabric/parameter.yml`. Never hard-code workspace or item IDs.
+- **Per-environment IDs:** connection and item IDs come from the Variable Library and `fabric/data|bi/parameter.yml` (see `docs/cicd.md`). Never hard-code workspace or item IDs.
 - **Tables are not in Git.** DE2's DDL notebooks are idempotent and run after every deploy.
 
 ## 4a. Identities and access

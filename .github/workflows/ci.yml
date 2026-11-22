@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install
-        run: pip install ruff pyyaml pytest
+        run: pip install ruff -r infra/ci/requirements.txt
       - name: Lint Python
         run: ruff check .
       - name: Validate contracts are YAML
@@ -32,7 +32,22 @@ jobs:
           sys.exit(1 if bad else 0)
           EOF
       - name: Unit tests
-        run: python -m pytest tests -q || [ $? -eq 5 ]  # 5 = no tests collected yet
+        run: python -m pytest tests -q || [ $? -eq 5 ]  # 5 = no tests collected
 
-# Deploy jobs (fabric-cicd: dev on push to dev, test on push to main,
-# prod gated by the 'prod' environment) are added by the DE Manager in the CI/CD issue.
+  path-guard:
+    # SPEC §4a: a branch "<agent>/..." may only change that agent's paths.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pyyaml
+      - name: Check changed paths against infra/ci/ownership.yml
+        run: |
+          python infra/ci/path_guard.py \
+            --branch "${{ github.head_ref }}" \
+            --base "origin/${{ github.base_ref }}"

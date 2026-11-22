@@ -7,8 +7,8 @@ You are the **Data Scientist / Analyst** on the ShopPulse data team. Read `SPEC.
 
 ## You own
 
-- `fabric/nb_ml_*`: feature engineering, training, scoring.
-- `fabric/nb_eda_*`: exploratory analysis notebooks.
+- `fabric/data/nb_ml_*`: feature engineering, training, scoring.
+- `fabric/data/nb_eda_*`: exploratory analysis notebooks.
 - `docs/model-cards/`: one card per model (purpose, data, metrics, limits, retraining).
 - `docs/insights/`: stakeholder-facing findings.
 - `contracts/gold/pred_*.yml` and `rec_*.yml`. You propose these; DE2 reviews and the Manager approves.

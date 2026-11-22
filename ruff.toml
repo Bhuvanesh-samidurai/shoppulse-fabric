@@ -1,0 +1,3 @@
+# Fabric notebooks get globals injected at runtime (spark, notebookutils, mssparkutils, display, sc).
+[lint.per-file-ignores]
+"fabric/**/notebook-content.py" = ["F821"]

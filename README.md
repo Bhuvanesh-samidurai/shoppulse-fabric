@@ -33,7 +33,7 @@ A five-agent AI data team: DE Manager, Pipeline Engineer, Data Modeler, BI Devel
 | Path | What |
 |---|---|
 | `contracts/` | Data contracts per table (schema, keys, grain, SCD, Delta properties) |
-| `fabric/` | Fabric items, Git-synced (notebooks, pipelines, eventstreams, model, report) |
+| `fabric/data/`, `fabric/bi/` | Fabric items in Git format, deployed to the data and BI workspaces |
 | `generator/` | Olist download, German relocation, live replayer |
 | `sql/` | OLTP and write-back DDL |
 | `kql/` | Eventhouse tables, policies, functions |

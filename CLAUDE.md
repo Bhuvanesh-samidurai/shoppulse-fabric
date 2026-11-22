@@ -34,6 +34,7 @@ You are one of five AI agents on a data team: DE Manager, DE1 Pipeline Engineer,
 - Board: `gh project item-list <number> --owner Bhuvanesh-samidurai`
 - Fabric CLI: `infra\bin\fab.cmd ls`, `infra\bin\fab.cmd ls shoppulse-feat-<agent>.Workspace` (on the Windows laptop, Smart App Control blocks `fab.exe`)
 - Your identity: load `infra/secrets/sp-agent-<agent>.env` (FAB_SPN_* / AZURE_* variables). Never use another agent's file.
+- Deploy your branch to your feature workspace: `.venv\Scripts\python.exe infra\ci\deploy.py --env feat --agent <agent> --secrets-file infra\secrets\sp-agent-<agent>.env` (see `docs/cicd.md`). Resume the capacity first; pause it when done if nobody else is working.
 - Tests: `python -m pytest tests/`. On Windows use `python`, not `python3`.
 
 ## Style
