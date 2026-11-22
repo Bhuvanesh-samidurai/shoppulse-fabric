@@ -1,0 +1,87 @@
+name: deploy
+
+# dev branch  -> Dev workspaces (automatic)
+# main branch -> Test workspaces (automatic) -> Prod workspaces (waits for Bhuvanesh's approval)
+# Needs capacity fabcapacity1 to be running; a paused capacity makes the deploy fail.
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "fabric/**"
+      - "infra/ci/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  dev:
+    if: github.ref_name == 'dev'
+    runs-on: ubuntu-latest
+    env:
+      AZURE_TENANT_ID: ${{ secrets.FABRIC_TENANT_ID }}
+      AZURE_CLIENT_ID: ${{ secrets.FABRIC_CI_DEV_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.FABRIC_CI_DEV_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r infra/ci/requirements.txt
+      - name: Deploy to shoppulse-data-dev / shoppulse-bi-dev
+        run: python infra/ci/deploy.py --env dev
+      - name: Run DDL notebooks (idempotent)
+        run: python infra/ci/run_notebooks.py --workspace shoppulse-data-dev --pattern "nb_ddl_*"
+      - name: Smoke test
+        run: python infra/ci/run_notebooks.py --workspace shoppulse-data-dev --pattern "nb_ops_smoke"
+
+  test:
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    environment: test
+    env:
+      AZURE_TENANT_ID: ${{ secrets.FABRIC_TENANT_ID }}
+      AZURE_CLIENT_ID: ${{ secrets.FABRIC_CI_TEST_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.FABRIC_CI_TEST_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r infra/ci/requirements.txt
+      - name: Deploy to shoppulse-data-test / shoppulse-bi-test
+        run: python infra/ci/deploy.py --env test
+      - name: Run DDL notebooks (idempotent)
+        run: python infra/ci/run_notebooks.py --workspace shoppulse-data-test --pattern "nb_ddl_*"
+      - name: Smoke test
+        run: python infra/ci/run_notebooks.py --workspace shoppulse-data-test --pattern "nb_ops_smoke"
+      - name: Integration tests
+        run: python -m pytest tests/integration -q || [ $? -eq 5 ]
+
+  prod:
+    if: github.ref_name == 'main'
+    needs: test
+    runs-on: ubuntu-latest
+    environment: prod   # required reviewer: Bhuvanesh. Secrets exist only in this environment.
+    env:
+      AZURE_TENANT_ID: ${{ secrets.FABRIC_TENANT_ID }}
+      AZURE_CLIENT_ID: ${{ secrets.FABRIC_CI_PROD_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.FABRIC_CI_PROD_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r infra/ci/requirements.txt
+      - name: Deploy to shoppulse-data-prod / shoppulse-bi-prod
+        run: python infra/ci/deploy.py --env prod
+      - name: Run DDL notebooks (idempotent)
+        run: python infra/ci/run_notebooks.py --workspace shoppulse-data-prod --pattern "nb_ddl_*"
+      - name: Smoke test
+        run: python infra/ci/run_notebooks.py --workspace shoppulse-data-prod --pattern "nb_ops_smoke"
