@@ -155,12 +155,13 @@ foreach ($name in $SpNames) {
         $app = AzJson ad app create --display-name $name --sign-in-audience AzureADMyOrg
     } else { Say "  $name app exists ($($app.appId))" }
 
-    $sp = AzJson ad sp list --filter "appId eq '$($app.appId)'"
-    if (-not $sp) {
+    # note: PowerShell variable names are case-insensitive, so don't reuse $Sp here
+    $spObj = @(AzJson ad sp list --filter "appId eq '$($app.appId)'")
+    if (-not $spObj) {
         Plan "create service principal for $name"
-        if (-not $DryRun) { $sp = @(AzJson ad sp create --id $app.appId) }
+        if (-not $DryRun) { $spObj = @(AzJson ad sp create --id $app.appId) }
     }
-    if ($sp) { $Sp[$name] = $sp[0].id }
+    if ($spObj) { $Sp[$name] = $spObj[0].id }
 
     if ($GroupId -and $Sp[$name]) {
         $isMember = (AzJson ad group member check --group $GroupId --member-id $Sp[$name]).value
