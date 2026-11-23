@@ -1,0 +1,29 @@
+# Data contract bronze.wms_event (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.wms_event
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Warehouse (WMS) events from Eventstream es_wms, raw.
+grain: one row per event_id (duplicates possible; deduped in Silver)
+load: append
+source: Eventstream es_wms -> lakehouse destination
+scd: none
+primary_key: &id001 [event_id]
+business_key: *id001
+columns:
+- {name: event_id, type: string, nullable: false, description: UUID from the producer}
+- {name: event_type, type: string, nullable: false, description: GOODS_RECEIPT | PICK | PACK | SHIP | RETURN_RECEIPT | STOCK_ADJUST}
+- {name: event_ts, type: timestamp, nullable: false, description: Business time at the warehouse (UTC)}
+- {name: warehouse_code, type: string, nullable: false}
+- {name: order_id, type: string, nullable: true}
+- {name: item_no, type: int, nullable: true}
+- {name: material_id, type: string, nullable: false}
+- {name: quantity, type: int, nullable: false, description: Always positive; sign derived from event_type in Silver}
+- {name: reason_code, type: string, nullable: true, description: Returns / adjustments}
+- {name: _ingested_at, type: timestamp, nullable: false, description: Eventstream processed time}
+- {name: _source, type: string, nullable: false, description: Eventstream name}
+- {name: _batch_id, type: string, nullable: true, description: Not set by Eventstream; reserved}
+- {name: event_date, type: date, nullable: false, description: Derived from event_ts in the Eventstream; partition column}
+partition_by: [event_date]
+delta_properties: {delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

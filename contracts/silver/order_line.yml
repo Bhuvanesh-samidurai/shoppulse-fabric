@@ -1,0 +1,35 @@
+# Data contract silver.order_line (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.order_line
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: Order items with net, VAT and gross amounts in EUR.
+grain: one row per order item
+load: merge
+source: bronze.shop_sales_order_item
+scd: none
+primary_key: &id001 [order_id, item_no]
+business_key: *id001
+foreign_keys:
+- {column: order_id, ref: silver.sales_order.order_id}
+- {column: product_id, ref: silver.product.product_id}
+- {column: seller_id, ref: silver.seller.seller_id}
+columns:
+- {name: order_id, type: string, nullable: false}
+- {name: item_no, type: int, nullable: false}
+- {name: product_id, type: string, nullable: false}
+- {name: seller_id, type: string, nullable: false}
+- {name: shipping_limit_ts, type: timestamp, nullable: false}
+- {name: net_amount, type: 'decimal(12,2)', nullable: false}
+- {name: vat_rate, type: 'decimal(4,2)', nullable: false}
+- {name: vat_amount, type: 'decimal(12,2)', nullable: false}
+- {name: gross_amount, type: 'decimal(12,2)', nullable: false}
+- {name: freight_amount, type: 'decimal(12,2)', nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+constraints:
+- {name: amounts_non_negative, check: net_amount >= 0 AND freight_amount >= 0}
+- {name: gross_is_net_plus_vat, check: gross_amount = net_amount + vat_amount}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

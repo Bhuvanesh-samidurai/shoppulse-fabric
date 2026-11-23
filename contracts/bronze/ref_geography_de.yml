@@ -1,0 +1,25 @@
+# Data contract bronze.ref_geography_de (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.ref_geography_de
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: German postcodes with Bundesland and coordinates (public data, loaded once).
+grain: one row per postal_code
+load: overwrite
+source: Data Pipeline pl_ref_load from a public PLZ dataset
+scd: none
+primary_key: &id001 [postal_code]
+business_key: *id001
+columns:
+- {name: postal_code, type: string, nullable: false}
+- {name: city, type: string, nullable: false}
+- {name: region_code, type: string, nullable: false}
+- {name: region_name, type: string, nullable: false}
+- {name: lat, type: double, nullable: true}
+- {name: lon, type: double, nullable: true}
+- {name: _ingested_at, type: timestamp, nullable: false}
+- {name: _source, type: string, nullable: false, description: File or URL}
+- {name: _batch_id, type: string, nullable: false, description: Pipeline run id}
+partition_by: []
+delta_properties: {delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

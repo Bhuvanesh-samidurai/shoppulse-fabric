@@ -1,0 +1,22 @@
+# Data contract bronze.shop_vendor (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.shop_vendor
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Mirrored shop.vendor (SAP LFA1), the marketplace sellers.
+grain: one row per vendor_id
+load: shortcut
+source: 'Fabric SQL DB mirroring of sqldb_shop, shortcut into lh_bronze: shop.vendor'
+scd: none
+primary_key: &id001 [vendor_id]
+business_key: *id001
+columns:
+- {name: vendor_id, type: string, nullable: false}
+- {name: postal_code, type: string, nullable: false}
+- {name: city, type: string, nullable: false}
+- {name: region_code, type: string, nullable: false}
+- {name: changed_at, type: timestamp, nullable: false}
+partition_by: []
+delta_properties: {}
+retention_note: Managed by Fabric SQL DB mirroring; time travel via the source temporal/mirror history.

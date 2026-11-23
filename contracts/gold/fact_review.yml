@@ -1,0 +1,36 @@
+# Data contract gold.fact_review (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.fact_review
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Review scores with LLM sentiment and topic (no free text, GDPR).
+grain: one row per review per order
+load: merge
+source: silver.review
+scd: none
+primary_key: [review_key]
+business_key: [review_id, order_id]
+foreign_keys:
+- {column: review_date_key, ref: gold.dim_date.date_key}
+- {column: customer_key, ref: gold.dim_customer.customer_key}
+- {column: warehouse_key, ref: gold.dim_warehouse.warehouse_key}
+columns:
+- {name: review_key, type: bigint, nullable: false, description: 'xxhash64(review_id, order_id)'}
+- {name: review_id, type: string, nullable: false}
+- {name: order_id, type: string, nullable: false}
+- {name: review_date_key, type: int, nullable: false}
+- {name: customer_key, type: bigint, nullable: false}
+- {name: warehouse_key, type: bigint, nullable: false}
+- {name: score, type: int, nullable: false}
+- {name: has_comment, type: boolean, nullable: false}
+- {name: language, type: string, nullable: true}
+- {name: sentiment_label, type: string, nullable: true}
+- {name: sentiment_score, type: double, nullable: true}
+- {name: topic, type: string, nullable: true}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+constraints:
+- {name: score_range, check: score BETWEEN 1 AND 5}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

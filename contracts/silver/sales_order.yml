@@ -1,0 +1,30 @@
+# Data contract silver.sales_order (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.sales_order
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: Orders, typed and conformed.
+grain: one row per order_id
+load: merge
+source: bronze.shop_sales_order_header
+scd: none
+primary_key: &id001 [order_id]
+business_key: *id001
+foreign_keys:
+- {column: customer_id, ref: silver.customer.customer_id}
+- {column: warehouse_code, ref: silver.warehouse.warehouse_code}
+columns:
+- {name: order_id, type: string, nullable: false}
+- {name: customer_id, type: string, nullable: false}
+- {name: order_status, type: string, nullable: false}
+- {name: purchase_ts, type: timestamp, nullable: false}
+- {name: approved_ts, type: timestamp, nullable: true}
+- {name: carrier_handover_ts, type: timestamp, nullable: true}
+- {name: delivered_ts, type: timestamp, nullable: true}
+- {name: estimated_delivery_date, type: date, nullable: false}
+- {name: warehouse_code, type: string, nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

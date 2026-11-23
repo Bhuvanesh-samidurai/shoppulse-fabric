@@ -1,0 +1,50 @@
+# Data contract gold.fact_delivery (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.fact_delivery
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: 'Accumulating snapshot per order: purchase -> approve -> pick -> pack -> ship -> deliver. Updated as events arrive.'
+grain: one row per order_id
+load: merge
+source: silver.sales_order + silver.wms_movement + silver.shipment_event + silver.order_line
+scd: none
+primary_key: [delivery_key]
+business_key: [order_id]
+foreign_keys:
+- {column: customer_key, ref: gold.dim_customer.customer_key}
+- {column: warehouse_key, ref: gold.dim_warehouse.warehouse_key}
+- {column: carrier_key, ref: gold.dim_carrier.carrier_key}
+- {column: ship_to_geography_key, ref: gold.dim_geography.geography_key}
+- {column: purchase_date_key, ref: gold.dim_date.date_key}
+- {column: promised_date_key, ref: gold.dim_date.date_key}
+- {column: delivered_date_key, ref: gold.dim_date.date_key}
+columns:
+- {name: delivery_key, type: bigint, nullable: false, description: xxhash64(order_id)}
+- {name: order_id, type: string, nullable: false}
+- {name: customer_key, type: bigint, nullable: false}
+- {name: warehouse_key, type: bigint, nullable: false}
+- {name: carrier_key, type: bigint, nullable: false, description: -1 until the parcel is handed over}
+- {name: ship_to_geography_key, type: bigint, nullable: false}
+- {name: purchase_date_key, type: int, nullable: false}
+- {name: promised_date_key, type: int, nullable: false, description: estimated_delivery_date}
+- {name: delivered_date_key, type: int, nullable: false, description: -1 until delivered}
+- {name: purchase_ts, type: timestamp, nullable: false}
+- {name: approved_ts, type: timestamp, nullable: true}
+- {name: picked_ts, type: timestamp, nullable: true}
+- {name: packed_ts, type: timestamp, nullable: true}
+- {name: shipped_ts, type: timestamp, nullable: true}
+- {name: delivered_ts, type: timestamp, nullable: true}
+- {name: last_event_ts, type: timestamp, nullable: false}
+- {name: delivery_status, type: string, nullable: false, description: open | picked | packed | shipped | delivered | failed | returned | canceled}
+- {name: items_ordered, type: int, nullable: false}
+- {name: items_shipped, type: int, nullable: false}
+- {name: pick_to_ship_hours, type: double, nullable: true}
+- {name: delivery_days, type: double, nullable: true, description: purchase_ts -> delivered_ts}
+- {name: is_on_time, type: boolean, nullable: true, description: delivered_ts <= end of promised date; null until delivered}
+- {name: is_in_full, type: boolean, nullable: true, description: items_shipped = items_ordered; null until shipped}
+- {name: is_otif, type: boolean, nullable: true, description: is_on_time AND is_in_full}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

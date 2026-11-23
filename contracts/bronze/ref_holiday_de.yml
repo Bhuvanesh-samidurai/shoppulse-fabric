@@ -1,0 +1,22 @@
+# Data contract bronze.ref_holiday_de (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.ref_holiday_de
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: German public holidays, national and per Bundesland.
+grain: one row per date and scope
+load: overwrite
+source: Data Pipeline pl_ref_load
+scd: none
+primary_key: &id001 [holiday_date, scope]
+business_key: *id001
+columns:
+- {name: holiday_date, type: date, nullable: false}
+- {name: holiday_name, type: string, nullable: false}
+- {name: scope, type: string, nullable: false, description: 'DE for national, else region_code'}
+- {name: _ingested_at, type: timestamp, nullable: false}
+- {name: _source, type: string, nullable: false, description: File or URL}
+- {name: _batch_id, type: string, nullable: false, description: Pipeline run id}
+partition_by: []
+delta_properties: {delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

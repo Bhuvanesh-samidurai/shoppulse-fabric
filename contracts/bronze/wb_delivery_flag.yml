@@ -1,0 +1,23 @@
+# Data contract bronze.wb_delivery_flag (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.wb_delivery_flag
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Mirrored write-back table wb.delivery_flag (current rows; history stays in the SQL DB temporal table).
+grain: one row per order_id
+load: shortcut
+source: 'Fabric SQL DB mirroring of sqldb_shop, shortcut into lh_bronze: wb.delivery_flag'
+scd: none
+primary_key: &id001 [order_id]
+business_key: *id001
+columns:
+- {name: order_id, type: string, nullable: false}
+- {name: flag_type, type: string, nullable: false}
+- {name: comment, type: string, nullable: true}
+- {name: changed_by, type: string, nullable: false, description: User UPN, pii: true}
+- {name: valid_from, type: timestamp, nullable: false}
+- {name: valid_to, type: timestamp, nullable: false}
+partition_by: []
+delta_properties: {}
+retention_note: History in SQL DB temporal table wb.delivery_flag_history; query with FOR SYSTEM_TIME.

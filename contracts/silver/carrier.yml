@@ -1,0 +1,20 @@
+# Data contract silver.carrier (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.carrier
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: Parcel carriers (static reference, seeded by DDL).
+grain: one row per carrier_code
+load: overwrite
+source: seed in nb_ddl_silver
+scd: none
+primary_key: &id001 [carrier_code]
+business_key: *id001
+columns:
+- {name: carrier_code, type: string, nullable: false}
+- {name: carrier_name, type: string, nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

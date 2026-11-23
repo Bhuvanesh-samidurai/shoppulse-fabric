@@ -1,0 +1,26 @@
+# Data contract bronze.shop_material (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.shop_material
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Mirrored shop.material (SAP MARA).
+grain: one row per material_id
+load: shortcut
+source: 'Fabric SQL DB mirroring of sqldb_shop, shortcut into lh_bronze: shop.material'
+scd: none
+primary_key: &id001 [material_id]
+business_key: *id001
+columns:
+- {name: material_id, type: string, nullable: false}
+- {name: category_code, type: string, nullable: true}
+- {name: weight_g, type: int, nullable: true}
+- {name: length_cm, type: int, nullable: true}
+- {name: height_cm, type: int, nullable: true}
+- {name: width_cm, type: int, nullable: true}
+- {name: photos_qty, type: int, nullable: true}
+- {name: vat_rate, type: 'decimal(4,2)', nullable: false}
+- {name: changed_at, type: timestamp, nullable: false}
+partition_by: []
+delta_properties: {}
+retention_note: Managed by Fabric SQL DB mirroring; time travel via the source temporal/mirror history.

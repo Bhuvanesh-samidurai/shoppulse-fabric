@@ -1,0 +1,26 @@
+# Data contract bronze.wb_reorder_policy (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.wb_reorder_policy
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Mirrored write-back table wb.reorder_policy (current rows; history stays in the SQL DB temporal table).
+grain: one row per warehouse_code, material_id
+load: shortcut
+source: 'Fabric SQL DB mirroring of sqldb_shop, shortcut into lh_bronze: wb.reorder_policy'
+scd: none
+primary_key: &id001 [warehouse_code, material_id]
+business_key: *id001
+columns:
+- {name: warehouse_code, type: string, nullable: false}
+- {name: material_id, type: string, nullable: false}
+- {name: reorder_point, type: int, nullable: false}
+- {name: safety_stock, type: int, nullable: false}
+- {name: max_stock, type: int, nullable: false}
+- {name: note, type: string, nullable: true}
+- {name: changed_by, type: string, nullable: false, description: User UPN, pii: true}
+- {name: valid_from, type: timestamp, nullable: false}
+- {name: valid_to, type: timestamp, nullable: false}
+partition_by: []
+delta_properties: {}
+retention_note: History in SQL DB temporal table wb.reorder_policy_history; query with FOR SYSTEM_TIME.

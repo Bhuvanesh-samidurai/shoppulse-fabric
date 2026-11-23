@@ -1,0 +1,27 @@
+# Data contract gold.dim_geography (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.dim_geography
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: German postcodes for customer, seller and warehouse locations.
+grain: one row per postal_code
+load: merge
+source: silver.geography
+scd: '1'
+primary_key: [geography_key]
+business_key: [postal_code]
+unknown_member: true
+columns:
+- {name: geography_key, type: bigint, nullable: false, description: 'Surrogate key: xxhash64 of the business key; -1 = unknown member'}
+- {name: postal_code, type: string, nullable: false}
+- {name: city, type: string, nullable: false}
+- {name: region_code, type: string, nullable: false}
+- {name: region_name, type: string, nullable: false}
+- {name: macro_region, type: string, nullable: false}
+- {name: lat, type: double, nullable: true}
+- {name: lon, type: double, nullable: true}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

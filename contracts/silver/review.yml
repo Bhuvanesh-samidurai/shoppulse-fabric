@@ -1,0 +1,34 @@
+# Data contract silver.review (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.review
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: 'Reviews enriched by the Nebius LLM: language, English translation, sentiment, topic.'
+grain: one row per review per order
+load: merge
+source: bronze.shop_review + Nebius LLM (cached by text hash)
+scd: none
+primary_key: &id001 [review_id, order_id]
+business_key: *id001
+foreign_keys:
+- {column: order_id, ref: silver.sales_order.order_id}
+columns:
+- {name: review_id, type: string, nullable: false}
+- {name: order_id, type: string, nullable: false}
+- {name: score, type: int, nullable: false}
+- {name: created_ts, type: timestamp, nullable: false}
+- {name: has_comment, type: boolean, nullable: false}
+- {name: language, type: string, nullable: true, description: ISO 639-1 detected by the LLM}
+- {name: comment_en, type: string, nullable: true, description: 'Translated free text; may contain PII, never copied to Gold', pii: true}
+- {name: sentiment_label, type: string, nullable: true, description: positive | neutral | negative}
+- {name: sentiment_score, type: double, nullable: true, description: -1..1}
+- {name: topic, type: string, nullable: true, description: delivery | product_quality | wrong_item | packaging | price | service | other}
+- {name: llm_model, type: string, nullable: true}
+- {name: llm_text_hash, type: string, nullable: true, description: sha2 of the input text; cache key}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+constraints:
+- {name: score_range, check: score BETWEEN 1 AND 5}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

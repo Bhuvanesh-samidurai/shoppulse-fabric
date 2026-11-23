@@ -1,0 +1,29 @@
+# Data contract gold.fact_stock_snapshot (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.fact_stock_snapshot
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Periodic snapshot of stock per warehouse and product at end of day.
+grain: one row per day x warehouse x product with stock or movement
+load: merge
+source: silver.wms_movement
+scd: none
+primary_key: [snapshot_date_key, warehouse_key, product_key]
+business_key: [snapshot_date_key, warehouse_key, product_key]
+foreign_keys:
+- {column: snapshot_date_key, ref: gold.dim_date.date_key}
+- {column: warehouse_key, ref: gold.dim_warehouse.warehouse_key}
+- {column: product_key, ref: gold.dim_product.product_key}
+columns:
+- {name: snapshot_date_key, type: int, nullable: false}
+- {name: warehouse_key, type: bigint, nullable: false}
+- {name: product_key, type: bigint, nullable: false, description: Current SCD2 version on that day}
+- {name: on_hand_qty, type: int, nullable: false}
+- {name: receipts_qty, type: int, nullable: false}
+- {name: issues_qty, type: int, nullable: false}
+- {name: returns_qty, type: int, nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: [snapshot_date_key]
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

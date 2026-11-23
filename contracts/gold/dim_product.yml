@@ -1,0 +1,30 @@
+# Data contract gold.dim_product (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.dim_product
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Products, history of category / VAT changes.
+grain: one row per product_id per version
+load: merge
+source: silver.product
+scd: '2'
+primary_key: [product_key]
+business_key: [product_id]
+unknown_member: true
+columns:
+- {name: product_key, type: bigint, nullable: false, description: 'Surrogate key: xxhash64(product_id, valid_from); -1 = unknown'}
+- {name: product_id, type: string, nullable: false}
+- {name: category_en, type: string, nullable: false}
+- {name: category_de, type: string, nullable: true}
+- {name: weight_g, type: int, nullable: true}
+- {name: volume_cm3, type: int, nullable: true}
+- {name: vat_rate, type: 'decimal(4,2)', nullable: false}
+- {name: valid_from, type: timestamp, nullable: false}
+- {name: valid_to, type: timestamp, nullable: false, description: 9999-12-31 for the current row}
+- {name: is_current, type: boolean, nullable: false}
+- {name: row_hash, type: string, nullable: false, description: sha2 of tracked attributes}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

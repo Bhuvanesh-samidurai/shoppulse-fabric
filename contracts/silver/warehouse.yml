@@ -1,0 +1,23 @@
+# Data contract silver.warehouse (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.warehouse
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: The three fulfilment centres (static reference, seeded by DDL).
+grain: one row per warehouse_code
+load: overwrite
+source: seed in nb_ddl_silver
+scd: none
+primary_key: &id001 [warehouse_code]
+business_key: *id001
+columns:
+- {name: warehouse_code, type: string, nullable: false, description: HAM | DOR | MUC}
+- {name: warehouse_name, type: string, nullable: false}
+- {name: postal_code, type: string, nullable: false}
+- {name: city, type: string, nullable: false}
+- {name: region_code, type: string, nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

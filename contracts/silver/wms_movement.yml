@@ -1,0 +1,31 @@
+# Data contract silver.wms_movement (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.wms_movement
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: Deduplicated warehouse movements with signed quantity.
+grain: one row per event_id
+load: merge
+source: bronze.wms_event
+scd: none
+primary_key: &id001 [event_id]
+business_key: *id001
+foreign_keys:
+- {column: warehouse_code, ref: silver.warehouse.warehouse_code}
+- {column: product_id, ref: silver.product.product_id}
+columns:
+- {name: event_id, type: string, nullable: false}
+- {name: event_type, type: string, nullable: false}
+- {name: event_ts, type: timestamp, nullable: false}
+- {name: warehouse_code, type: string, nullable: false}
+- {name: order_id, type: string, nullable: true}
+- {name: item_no, type: int, nullable: true}
+- {name: product_id, type: string, nullable: false}
+- {name: quantity_signed, type: int, nullable: false, description: '+ receipt/return, - pick/adjust down'}
+- {name: reason_code, type: string, nullable: true}
+- {name: event_date, type: date, nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+partition_by: [event_date]
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

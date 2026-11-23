@@ -1,0 +1,23 @@
+# Data contract gold.dim_time (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.dim_time
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Minute of day.
+grain: one row per minute (1440 rows)
+load: overwrite
+source: generated in nb_ddl_gold
+scd: none
+primary_key: [time_key]
+business_key: [time_key]
+unknown_member: true
+columns:
+- {name: time_key, type: int, nullable: false, description: hour*100+minute; -1 = unknown}
+- {name: hour, type: int, nullable: false}
+- {name: minute, type: int, nullable: false}
+- {name: day_part, type: string, nullable: false, description: night | morning | afternoon | evening}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}
