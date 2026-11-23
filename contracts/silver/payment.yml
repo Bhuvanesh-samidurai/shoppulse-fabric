@@ -1,0 +1,25 @@
+# Data contract silver.payment (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.payment
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: Payment lines.
+grain: one row per payment line of an order
+load: merge
+source: bronze.shop_payment
+scd: none
+primary_key: &id001 [order_id, payment_seq]
+business_key: *id001
+foreign_keys:
+- {column: order_id, ref: silver.sales_order.order_id}
+columns:
+- {name: order_id, type: string, nullable: false}
+- {name: payment_seq, type: int, nullable: false}
+- {name: payment_type, type: string, nullable: false}
+- {name: installments, type: int, nullable: false}
+- {name: amount, type: 'decimal(12,2)', nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

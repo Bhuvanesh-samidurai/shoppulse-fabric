@@ -1,0 +1,30 @@
+# Data contract silver.shipment_event (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.shipment_event
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: Deduplicated carrier tracking events.
+grain: one row per event_id
+load: merge
+source: bronze.carrier_event
+scd: none
+primary_key: &id001 [event_id]
+business_key: *id001
+foreign_keys:
+- {column: order_id, ref: silver.sales_order.order_id}
+- {column: carrier_code, ref: silver.carrier.carrier_code}
+columns:
+- {name: event_id, type: string, nullable: false}
+- {name: tracking_id, type: string, nullable: false}
+- {name: order_id, type: string, nullable: false}
+- {name: carrier_code, type: string, nullable: false}
+- {name: status, type: string, nullable: false}
+- {name: event_ts, type: timestamp, nullable: false}
+- {name: postal_code, type: string, nullable: true}
+- {name: delay_reason, type: string, nullable: true}
+- {name: event_date, type: date, nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+partition_by: [event_date]
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

@@ -1,0 +1,34 @@
+# Data contract gold.fact_return (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.fact_return
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Returned items received at a warehouse.
+grain: one row per return event (WMS RETURN_RECEIPT)
+load: merge
+source: silver.wms_movement (event_type = RETURN_RECEIPT) + silver.order_line
+scd: none
+primary_key: [return_key]
+business_key: [event_id]
+foreign_keys:
+- {column: return_date_key, ref: gold.dim_date.date_key}
+- {column: customer_key, ref: gold.dim_customer.customer_key}
+- {column: product_key, ref: gold.dim_product.product_key}
+- {column: warehouse_key, ref: gold.dim_warehouse.warehouse_key}
+columns:
+- {name: return_key, type: bigint, nullable: false, description: xxhash64(event_id)}
+- {name: event_id, type: string, nullable: false}
+- {name: order_id, type: string, nullable: false}
+- {name: item_no, type: int, nullable: false}
+- {name: return_date_key, type: int, nullable: false}
+- {name: customer_key, type: bigint, nullable: false}
+- {name: product_key, type: bigint, nullable: false}
+- {name: warehouse_key, type: bigint, nullable: false}
+- {name: quantity, type: int, nullable: false}
+- {name: refund_amount, type: 'decimal(12,2)', nullable: false, description: gross_amount of the order line}
+- {name: reason_code, type: string, nullable: true}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

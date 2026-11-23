@@ -1,0 +1,26 @@
+# Data contract bronze.shop_sales_order_item (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.shop_sales_order_item
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Mirrored shop.sales_order_item (SAP VBAP).
+grain: one row per order item
+load: shortcut
+source: 'Fabric SQL DB mirroring of sqldb_shop, shortcut into lh_bronze: shop.sales_order_item'
+scd: none
+primary_key: &id001 [order_id, item_no]
+business_key: *id001
+columns:
+- {name: order_id, type: string, nullable: false}
+- {name: item_no, type: int, nullable: false}
+- {name: material_id, type: string, nullable: false}
+- {name: vendor_id, type: string, nullable: false}
+- {name: shipping_limit_ts, type: timestamp, nullable: false}
+- {name: net_price, type: 'decimal(12,2)', nullable: false}
+- {name: freight, type: 'decimal(12,2)', nullable: false}
+- {name: vat_rate, type: 'decimal(4,2)', nullable: false}
+- {name: changed_at, type: timestamp, nullable: false}
+partition_by: []
+delta_properties: {}
+retention_note: Managed by Fabric SQL DB mirroring; time travel via the source temporal/mirror history.

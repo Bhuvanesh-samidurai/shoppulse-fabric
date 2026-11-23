@@ -1,0 +1,21 @@
+# Data contract silver.holiday (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.holiday
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: German public holidays.
+grain: one row per date and scope
+load: overwrite
+source: bronze.ref_holiday_de
+scd: none
+primary_key: &id001 [holiday_date, scope]
+business_key: *id001
+columns:
+- {name: holiday_date, type: date, nullable: false}
+- {name: holiday_name, type: string, nullable: false}
+- {name: scope, type: string, nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

@@ -1,0 +1,25 @@
+# Data contract bronze.shop_review (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.shop_review
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Mirrored shop.review.
+grain: one row per review per order
+load: shortcut
+source: 'Fabric SQL DB mirroring of sqldb_shop, shortcut into lh_bronze: shop.review'
+scd: none
+primary_key: &id001 [review_id, order_id]
+business_key: *id001
+columns:
+- {name: review_id, type: string, nullable: false}
+- {name: order_id, type: string, nullable: false}
+- {name: score, type: tinyint, nullable: false}
+- {name: title, type: string, nullable: true, pii: true}
+- {name: message, type: string, nullable: true, description: 'Free text, may contain PII', pii: true}
+- {name: created_ts, type: timestamp, nullable: false}
+- {name: answered_ts, type: timestamp, nullable: true}
+- {name: changed_at, type: timestamp, nullable: false}
+partition_by: []
+delta_properties: {}
+retention_note: Managed by Fabric SQL DB mirroring; time travel via the source temporal/mirror history.

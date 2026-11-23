@@ -1,0 +1,25 @@
+# Data contract bronze.wb_forecast_override (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.wb_forecast_override
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Mirrored write-back table wb.forecast_override (current rows; history stays in the SQL DB temporal table).
+grain: one row per category_code, warehouse_code, week_start
+load: shortcut
+source: 'Fabric SQL DB mirroring of sqldb_shop, shortcut into lh_bronze: wb.forecast_override'
+scd: none
+primary_key: &id001 [category_code, warehouse_code, week_start]
+business_key: *id001
+columns:
+- {name: category_code, type: string, nullable: false}
+- {name: warehouse_code, type: string, nullable: false}
+- {name: week_start, type: date, nullable: false}
+- {name: override_qty, type: int, nullable: false}
+- {name: reason, type: string, nullable: false}
+- {name: changed_by, type: string, nullable: false, description: User UPN, pii: true}
+- {name: valid_from, type: timestamp, nullable: false}
+- {name: valid_to, type: timestamp, nullable: false}
+partition_by: []
+delta_properties: {}
+retention_note: History in SQL DB temporal table wb.forecast_override_history; query with FOR SYSTEM_TIME.

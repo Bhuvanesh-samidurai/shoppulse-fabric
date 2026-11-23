@@ -1,0 +1,33 @@
+# Data contract gold.dim_date (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.dim_date
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Calendar with German holidays and retail peaks.
+grain: one row per calendar day 2016-01-01..2030-12-31
+load: overwrite
+source: generated in nb_ddl_gold + silver.holiday
+scd: none
+primary_key: [date_key]
+business_key: [date]
+unknown_member: true
+columns:
+- {name: date_key, type: int, nullable: false, description: yyyymmdd; -1 = unknown}
+- {name: date, type: date, nullable: false}
+- {name: year, type: int, nullable: false}
+- {name: quarter, type: int, nullable: false}
+- {name: month, type: int, nullable: false}
+- {name: month_name, type: string, nullable: false}
+- {name: iso_week, type: int, nullable: false}
+- {name: day_of_week, type: int, nullable: false, description: 1 = Monday}
+- {name: day_name, type: string, nullable: false}
+- {name: is_weekend, type: boolean, nullable: false}
+- {name: is_holiday_de, type: boolean, nullable: false, description: National holiday}
+- {name: holiday_name, type: string, nullable: true}
+- {name: is_black_friday_week, type: boolean, nullable: false}
+- {name: is_q4_peak, type: boolean, nullable: false, description: Black Friday to 24 Dec}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

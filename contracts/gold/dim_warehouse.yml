@@ -1,0 +1,25 @@
+# Data contract gold.dim_warehouse (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.dim_warehouse
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Fulfilment centres.
+grain: one row per warehouse_code
+load: merge
+source: silver.warehouse
+scd: '1'
+primary_key: [warehouse_key]
+business_key: [warehouse_code]
+foreign_keys:
+- {column: geography_key, ref: gold.dim_geography.geography_key}
+unknown_member: true
+columns:
+- {name: warehouse_key, type: bigint, nullable: false, description: 'Surrogate key: xxhash64 of the business key; -1 = unknown member'}
+- {name: warehouse_code, type: string, nullable: false}
+- {name: warehouse_name, type: string, nullable: false}
+- {name: geography_key, type: bigint, nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

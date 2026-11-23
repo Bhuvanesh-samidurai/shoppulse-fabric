@@ -1,0 +1,44 @@
+# Data contract gold.fact_order_line (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.fact_order_line
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Sales at order-item level (GMV net/gross, VAT, freight).
+grain: one row per order item
+load: merge
+source: silver.order_line + silver.sales_order
+scd: none
+primary_key: [order_line_key]
+business_key: [order_id, item_no]
+foreign_keys:
+- {column: order_date_key, ref: gold.dim_date.date_key}
+- {column: order_time_key, ref: gold.dim_time.time_key}
+- {column: customer_key, ref: gold.dim_customer.customer_key}
+- {column: product_key, ref: gold.dim_product.product_key}
+- {column: seller_key, ref: gold.dim_seller.seller_key}
+- {column: warehouse_key, ref: gold.dim_warehouse.warehouse_key}
+- {column: ship_to_geography_key, ref: gold.dim_geography.geography_key}
+columns:
+- {name: order_line_key, type: bigint, nullable: false, description: 'xxhash64(order_id, item_no)'}
+- {name: order_id, type: string, nullable: false, description: Degenerate dimension}
+- {name: item_no, type: int, nullable: false}
+- {name: order_date_key, type: int, nullable: false}
+- {name: order_time_key, type: int, nullable: false}
+- {name: customer_key, type: bigint, nullable: false, description: SCD2 version valid at purchase_ts}
+- {name: product_key, type: bigint, nullable: false, description: SCD2 version valid at purchase_ts}
+- {name: seller_key, type: bigint, nullable: false}
+- {name: warehouse_key, type: bigint, nullable: false}
+- {name: ship_to_geography_key, type: bigint, nullable: false}
+- {name: order_status, type: string, nullable: false}
+- {name: quantity, type: int, nullable: false, description: Always 1 in Olist}
+- {name: net_amount, type: 'decimal(12,2)', nullable: false}
+- {name: vat_amount, type: 'decimal(12,2)', nullable: false}
+- {name: gross_amount, type: 'decimal(12,2)', nullable: false}
+- {name: freight_amount, type: 'decimal(12,2)', nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+constraints:
+- {name: gross_is_net_plus_vat, check: gross_amount = net_amount + vat_amount}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}
