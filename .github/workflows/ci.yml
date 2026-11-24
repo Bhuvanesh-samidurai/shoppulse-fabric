@@ -14,8 +14,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            infra/ci/requirements.txt
+            generator/requirements.txt
       - name: Install
-        run: pip install ruff -r infra/ci/requirements.txt
+        run: pip install ruff -r infra/ci/requirements.txt -r generator/requirements.txt
       - name: Lint Python
         run: ruff check .
       - name: Validate contracts are YAML

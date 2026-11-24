@@ -17,7 +17,9 @@ from __future__ import annotations
 import argparse
 import os
 import pathlib
+import shutil
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PARTS = ("data", "bi")
@@ -45,6 +47,18 @@ def load_secrets(path: str | None) -> dict[str, str]:
 
 def has_items(folder: pathlib.Path) -> bool:
     return folder.is_dir() and any(folder.rglob(".platform"))
+
+
+# Local build/editor leftovers that must never become item definition parts. fabric-cicd uploads
+# every file in an item folder; a __pycache__/*.pyc inside a notebook folder made the Fabric API
+# reject the notebook ("definition parts with empty payload", found in #13).
+ARTEFACTS = ("__pycache__", "*.pyc", "*.pyo", ".ipynb_checkpoints", ".DS_Store", "Thumbs.db")
+
+
+def stage(folder: pathlib.Path, target: pathlib.Path) -> pathlib.Path:
+    """Copy folder to target without ARTEFACTS and return the copy (deploys read from the copy)."""
+    shutil.copytree(folder, target, ignore=shutil.ignore_patterns(*ARTEFACTS))
+    return target
 
 
 def main() -> int:
@@ -80,15 +94,17 @@ def main() -> int:
             continue
         print(f"[{part}] deploying fabric/{part} -> {ws_name} (environment '{args.env}')")
         try:
-            ws = FabricWorkspace(
-                workspace_name=ws_name,
-                repository_directory=str(folder),
-                environment=args.env,
-                token_credential=cred,
-            )
-            publish_all_items(ws)
-            if args.env != "feat":
-                unpublish_all_orphan_items(ws)
+            with tempfile.TemporaryDirectory(prefix="shoppulse-deploy-") as tmp:
+                staged = stage(folder, pathlib.Path(tmp) / part)
+                ws = FabricWorkspace(
+                    workspace_name=ws_name,
+                    repository_directory=str(staged),
+                    environment=args.env,
+                    token_credential=cred,
+                )
+                publish_all_items(ws)
+                if args.env != "feat":
+                    unpublish_all_orphan_items(ws)
         except Exception as exc:
             print(
                 f"\nDeploy to {ws_name} failed: {exc}\n"
