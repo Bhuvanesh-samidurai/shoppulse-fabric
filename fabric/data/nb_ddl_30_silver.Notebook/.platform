@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_ddl_30_silver",
+    "description": "Creates Silver and ops tables and seeds warehouse and carrier."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "5b45151d-094d-5411-a1bb-4f6ae0201d85"
+  }
+}

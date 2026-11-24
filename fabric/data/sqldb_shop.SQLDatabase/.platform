@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SQLDatabase",
+    "displayName": "sqldb_shop",
+    "description": "Shop OLTP (shop schema) and write-back temporal tables (wb schema). Schema applied by nb_ddl_10_sqldb."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "6d8506a2-22c2-5348-b01e-6f1d30b7c804"
+  }
+}
