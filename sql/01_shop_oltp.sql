@@ -4,7 +4,7 @@
 -- Every table has a primary key: Fabric SQL DB mirroring to OneLake requires one.
 -- Idempotent: safe to run repeatedly.
 
-IF SCHEMA_ID(N'shop') IS NULL EXEC (N'CREATE SCHEMA shop');
+IF SCHEMA_ID(N'shop') IS NULL EXEC (N'CREATE SCHEMA shop AUTHORIZATION dbo');
 GO
 
 -- Customer master (SAP KNA1)

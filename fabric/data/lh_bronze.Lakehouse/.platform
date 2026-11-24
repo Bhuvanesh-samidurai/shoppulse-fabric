@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Lakehouse",
+    "displayName": "lh_bronze",
+    "description": "Bronze: raw events, reference data, shortcuts to the sqldb_shop mirror (SPEC \u00a73)."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "2e71c95f-c50a-5d10-b77a-2d042367f6ff"
+  }
+}

@@ -121,6 +121,36 @@ SELECT * FROM wb.reorder_policy FOR SYSTEM_TIME ALL WHERE material_id = '...' OR
 - **Quarantine tables:** rows failing a contract check go to `<layer>._quarantine_<table>`, with the same columns plus `_reason string` and `_run_id string`.
 - **Run log:** every run writes one row per target table to `ops.run_log` (contract `contracts/ops/run_log.yml`).
 
+## How the tables get created (DDL notebooks)
+
+`contracts/_tools/render_ddl.py` generates four notebooks from `contracts/` and `sql/`. Never edit them by hand: `tests/contracts/test_ddl_rendered.py` fails if they are stale. CD runs them in name order after every deploy.
+
+| Notebook | Does |
+|---|---|
+| `nb_ddl_10_sqldb` | Runs `sql/*.sql` against `sqldb_shop` (pyodbc, ODBC Driver 18, notebook identity token). Creates schemas `AUTHORIZATION dbo`: a service principal can't be resolved as a schema owner. |
+| `nb_ddl_20_bronze` | Creates the Bronze Delta tables, plus OneLake shortcuts `lh_bronze/Tables/dbo/<shop_*/wb_*>` → `sqldb_shop/Tables/<schema>/<table>` (the SQL DB's automatic mirror) through the Fabric REST API |
+| `nb_ddl_30_silver` | Creates the Silver tables and `ops.run_log`, and seeds the 3 warehouses and 3 carriers |
+| `nb_ddl_40_gold` | Creates the Gold tables, the `-1` unknown member per dimension, `dim_date` (2016–2030, German national holidays, Black Friday week, Q4 peak) and `dim_time` |
+
+**How the notebooks write tables:**
+- They create path-based Delta tables under `Tables/<schema>/<table>` of each schema-enabled lakehouse, so no default lakehouse needs to be attached.
+- Each run makes the table match its contract:
+  - creates a missing table,
+  - adds missing nullable columns,
+  - sets differing table properties,
+  - adds missing `CHECK` constraints.
+- Nothing is dropped. A new NOT NULL column fails the run with a "needs a migration" message.
+- Each table records `shoppulse.contract_version`.
+
+**Why the SQL schema is applied by a notebook:** a Fabric SQL database deploys as an empty item through fabric-cicd (shell only). Applying `sql/*.sql` from `nb_ddl_10_sqldb` reuses the existing CD step and needs no extra drivers on the GitHub runner.
+
+**Check a deployed workspace:**
+
+```powershell
+$env:SHOPPULSE_SCHEMA_WORKSPACE = "shoppulse-feat-de2"; $env:SHOPPULSE_SECRETS_FILE = "infra/secrets/sp-agent-de2.env"
+python -m pytest tests/contracts/test_deployed_schema.py -q
+```
+
 ## Changing a contract
 
 1. Open a PR from a `de2/` branch (DS may propose `pred_*` and `rec_*` contracts).

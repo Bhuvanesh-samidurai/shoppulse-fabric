@@ -5,7 +5,7 @@
 -- SPEC names wb_reorder_policy / wb_forecast_override / wb_delivery_flag = wb.reorder_policy / wb.forecast_override / wb.delivery_flag.
 -- Idempotent: safe to run repeatedly.
 
-IF SCHEMA_ID(N'wb') IS NULL EXEC (N'CREATE SCHEMA wb');
+IF SCHEMA_ID(N'wb') IS NULL EXEC (N'CREATE SCHEMA wb AUTHORIZATION dbo');
 GO
 
 IF OBJECT_ID(N'wb.reorder_policy', N'U') IS NULL

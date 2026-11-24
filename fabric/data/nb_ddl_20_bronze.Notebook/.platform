@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_ddl_20_bronze",
+    "description": "Creates Bronze tables and the shortcuts to the sqldb_shop mirror."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "d0e39a45-69a3-5be4-b108-c88c5701b4bd"
+  }
+}
