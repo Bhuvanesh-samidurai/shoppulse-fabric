@@ -34,7 +34,8 @@ def download(force: bool = False) -> None:
             os.environ[k] = env[k]  # process only; never written anywhere
     if not (env.get("KAGGLE_API_TOKEN") or (env.get("KAGGLE_USERNAME") and env.get("KAGGLE_KEY"))):
         sys.exit("No Kaggle credentials in infra/.env (KAGGLE_API_TOKEN or KAGGLE_USERNAME + KAGGLE_KEY)")
-    from kaggle.api.kaggle_api_extended import KaggleApi  # imported late: it reads credentials on import/authenticate
+    # imported late: the kaggle package reads credentials on import/authenticate
+    from kaggle.api.kaggle_api_extended import KaggleApi
 
     api = KaggleApi()
     api.authenticate()
