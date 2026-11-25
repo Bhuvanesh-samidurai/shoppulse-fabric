@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Lakehouse",
+    "displayName": "lh_gold",
+    "description": "Gold: Kimball star schema for the Direct Lake model."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "9c50828c-0102-5d25-bdec-9e3b1b7004ea"
+  }
+}

@@ -1,0 +1,22 @@
+# Data contract bronze.ref_category_translation (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.ref_category_translation
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Olist product category names Portuguese -> English (+ German).
+grain: one row per category_code
+load: overwrite
+source: Olist product_category_name_translation.csv + generator German mapping
+scd: none
+primary_key: &id001 [category_code]
+business_key: *id001
+columns:
+- {name: category_code, type: string, nullable: false}
+- {name: category_en, type: string, nullable: false}
+- {name: category_de, type: string, nullable: true}
+- {name: _ingested_at, type: timestamp, nullable: false}
+- {name: _source, type: string, nullable: false, description: File or URL}
+- {name: _batch_id, type: string, nullable: false, description: Pipeline run id}
+partition_by: []
+delta_properties: {delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

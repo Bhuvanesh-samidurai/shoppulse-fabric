@@ -1,0 +1,23 @@
+# Data contract bronze.shop_payment (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.shop_payment
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Mirrored shop.payment.
+grain: one row per payment line of an order
+load: shortcut
+source: 'Fabric SQL DB mirroring of sqldb_shop, shortcut into lh_bronze: shop.payment'
+scd: none
+primary_key: &id001 [order_id, payment_seq]
+business_key: *id001
+columns:
+- {name: order_id, type: string, nullable: false}
+- {name: payment_seq, type: int, nullable: false}
+- {name: payment_type, type: string, nullable: false}
+- {name: installments, type: int, nullable: false}
+- {name: amount, type: 'decimal(12,2)', nullable: false}
+- {name: changed_at, type: timestamp, nullable: false}
+partition_by: []
+delta_properties: {}
+retention_note: Managed by Fabric SQL DB mirroring; time travel via the source temporal/mirror history.

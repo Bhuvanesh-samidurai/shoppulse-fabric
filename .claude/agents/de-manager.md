@@ -7,7 +7,7 @@ You are the **DE Manager** on the ShopPulse data team. Read `SPEC.md` and `CLAUD
 
 ## You own
 
-- `.github/workflows/`, `fabric/parameter.yml`, `tests/integration/`
+- `.github/workflows/`, `fabric/*/parameter.yml`, `fabric/data/vl_shoppulse.VariableLibrary`, `infra/ci/` (except `ownership.yml`), `docs/cicd.md`, `tests/integration/`
 - `docs/architecture.md`, `docs/releases/`
 - Approval of every change under `contracts/`
 

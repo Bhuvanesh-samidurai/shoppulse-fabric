@@ -1,0 +1,24 @@
+# Data contract bronze.shop_customer (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.shop_customer
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Mirrored shop.customer (SAP KNA1).
+grain: one row per customer_id
+load: shortcut
+source: 'Fabric SQL DB mirroring of sqldb_shop, shortcut into lh_bronze: shop.customer'
+scd: none
+primary_key: &id001 [customer_id]
+business_key: *id001
+columns:
+- {name: customer_id, type: string, nullable: false}
+- {name: customer_unique_id, type: string, nullable: false, description: Real person id, pii: true}
+- {name: postal_code, type: string, nullable: false, pii: true}
+- {name: city, type: string, nullable: false}
+- {name: region_code, type: string, nullable: false}
+- {name: created_at, type: timestamp, nullable: false}
+- {name: changed_at, type: timestamp, nullable: false}
+partition_by: []
+delta_properties: {}
+retention_note: Managed by Fabric SQL DB mirroring; time travel via the source temporal/mirror history.

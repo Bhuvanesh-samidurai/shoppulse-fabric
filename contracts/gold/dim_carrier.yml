@@ -1,0 +1,22 @@
+# Data contract gold.dim_carrier (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.dim_carrier
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Parcel carriers.
+grain: one row per carrier_code
+load: merge
+source: silver.carrier
+scd: '1'
+primary_key: [carrier_key]
+business_key: [carrier_code]
+unknown_member: true
+columns:
+- {name: carrier_key, type: bigint, nullable: false, description: 'Surrogate key: xxhash64 of the business key; -1 = unknown member'}
+- {name: carrier_code, type: string, nullable: false}
+- {name: carrier_name, type: string, nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

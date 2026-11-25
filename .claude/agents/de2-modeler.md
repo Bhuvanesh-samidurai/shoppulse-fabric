@@ -8,7 +8,7 @@ You are **DE2, the Data Modeler** on the ShopPulse data team. Read `SPEC.md` and
 ## You own
 
 - `contracts/bronze/`, `contracts/silver/`, `contracts/gold/`: one YAML per table.
-- `fabric/nb_ddl_*`: idempotent DDL notebooks that CD runs after every deploy.
+- `fabric/data/nb_ddl_*`: idempotent DDL notebooks that CD runs after every deploy.
 - `sql/`: OLTP schema (SAP-style naming, e.g. sales order header/item, delivery) and write-back temporal tables.
 - `docs/data-model.md`: ERD, grain and key strategy.
 - `tests/contracts/`

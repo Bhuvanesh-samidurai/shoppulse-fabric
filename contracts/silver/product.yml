@@ -1,0 +1,27 @@
+# Data contract silver.product (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.product
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: Products with English/German category and VAT rate.
+grain: one row per product_id
+load: merge
+source: bronze.shop_material + bronze.ref_category_translation
+scd: none
+primary_key: &id001 [product_id]
+business_key: *id001
+columns:
+- {name: product_id, type: string, nullable: false}
+- {name: category_code, type: string, nullable: true}
+- {name: category_en, type: string, nullable: false, description: '''unknown'' when missing'}
+- {name: category_de, type: string, nullable: true}
+- {name: weight_g, type: int, nullable: true}
+- {name: volume_cm3, type: int, nullable: true, description: length x height x width}
+- {name: vat_rate, type: 'decimal(4,2)', nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+constraints:
+- {name: vat_rate_valid, check: 'vat_rate IN (0.19, 0.07)'}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

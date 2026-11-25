@@ -6,9 +6,11 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
-data/
+/data/
+generator/data/
 *.csv
 *.parquet
 mlruns/
 .DS_Store
 .claude/settings.local.json
+infra/secrets/

@@ -1,0 +1,27 @@
+# Data contract silver.geography (owner: DE2). Change = PR + version bump + Manager approval.
+table: silver.geography
+version: 1.0.0
+owner: de2
+layer: silver
+lakehouse: lh_silver
+description: German postcodes with Bundesland and macro region.
+grain: one row per postal_code
+load: overwrite
+source: bronze.ref_geography_de
+scd: none
+primary_key: &id001 [postal_code]
+business_key: *id001
+columns:
+- {name: postal_code, type: string, nullable: false}
+- {name: city, type: string, nullable: false}
+- {name: region_code, type: string, nullable: false}
+- {name: region_name, type: string, nullable: false}
+- {name: macro_region, type: string, nullable: false, description: Nord | Ost | Sued | West}
+- {name: lat, type: double, nullable: true}
+- {name: lon, type: double, nullable: true}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false, description: ops.run_log run_id}
+constraints:
+- {name: plz_format, check: 'postal_code RLIKE ''^[0-9]{5}$'''}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

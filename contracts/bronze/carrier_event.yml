@@ -1,0 +1,28 @@
+# Data contract bronze.carrier_event (owner: DE2). Change = PR + version bump + Manager approval.
+table: bronze.carrier_event
+version: 1.0.0
+owner: de2
+layer: bronze
+lakehouse: lh_bronze
+description: Parcel tracking events from Eventstream es_carrier, raw.
+grain: one row per event_id (duplicates possible)
+load: append
+source: Eventstream es_carrier -> lakehouse destination
+scd: none
+primary_key: &id001 [event_id]
+business_key: *id001
+columns:
+- {name: event_id, type: string, nullable: false}
+- {name: tracking_id, type: string, nullable: false}
+- {name: order_id, type: string, nullable: false}
+- {name: carrier_code, type: string, nullable: false, description: DHL | DPD | HERMES}
+- {name: status, type: string, nullable: false, description: LABEL_CREATED | PICKED_UP | IN_TRANSIT | OUT_FOR_DELIVERY | DELIVERED | DELIVERY_FAILED | RETURNED}
+- {name: event_ts, type: timestamp, nullable: false}
+- {name: postal_code, type: string, nullable: true, description: Depot or delivery PLZ}
+- {name: delay_reason, type: string, nullable: true}
+- {name: _ingested_at, type: timestamp, nullable: false, description: Eventstream processed time}
+- {name: _source, type: string, nullable: false, description: Eventstream name}
+- {name: _batch_id, type: string, nullable: true, description: Not set by Eventstream; reserved}
+- {name: event_date, type: date, nullable: false}
+partition_by: [event_date]
+delta_properties: {delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

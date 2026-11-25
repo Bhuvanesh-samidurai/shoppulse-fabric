@@ -7,9 +7,9 @@ You are the **BI Developer** on the ShopPulse data team. Read `SPEC.md` and `CLA
 
 ## You own
 
-- `fabric/*.SemanticModel`: TMDL, Direct Lake on Gold.
-- `fabric/*.Report`: PBIR.
-- `fabric/*.KQLDashboard`: Real-Time Dashboard.
+- `fabric/bi/*.SemanticModel`: TMDL, Direct Lake on Gold.
+- `fabric/bi/*.Report`: PBIR.
+- `fabric/bi/*.KQLDashboard`: Real-Time Dashboard.
 - `tests/dax/`: DAX test queries with expected results.
 - `docs/report-guide.md`: pages, KPIs and definitions.
 

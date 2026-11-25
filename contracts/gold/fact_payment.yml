@@ -1,0 +1,29 @@
+# Data contract gold.fact_payment (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.fact_payment
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Payments per order line of payment.
+grain: one row per payment line of an order
+load: merge
+source: silver.payment
+scd: none
+primary_key: [payment_key]
+business_key: [order_id, payment_seq]
+foreign_keys:
+- {column: order_date_key, ref: gold.dim_date.date_key}
+- {column: customer_key, ref: gold.dim_customer.customer_key}
+columns:
+- {name: payment_key, type: bigint, nullable: false, description: 'xxhash64(order_id, payment_seq)'}
+- {name: order_id, type: string, nullable: false}
+- {name: payment_seq, type: int, nullable: false}
+- {name: order_date_key, type: int, nullable: false}
+- {name: customer_key, type: bigint, nullable: false}
+- {name: payment_type, type: string, nullable: false}
+- {name: installments, type: int, nullable: false}
+- {name: amount, type: 'decimal(12,2)', nullable: false}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}

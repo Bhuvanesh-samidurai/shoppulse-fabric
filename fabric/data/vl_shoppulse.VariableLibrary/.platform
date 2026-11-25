@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "VariableLibrary",
+    "displayName": "vl_shoppulse",
+    "description": "Per-environment settings. Active value set = environment (fabric-cicd)."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "a7f33b7d-6cd6-4bb5-8da2-4047c4220b97"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_ddl_10_sqldb",
+    "description": "Creates the shop and wb schemas in sqldb_shop from sql/*.sql."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "111a1c7d-d5a4-5d7f-a5b5-aa19a4cdc3d3"
+  }
+}

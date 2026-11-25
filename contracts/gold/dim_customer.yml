@@ -1,0 +1,30 @@
+# Data contract gold.dim_customer (owner: DE2). Change = PR + version bump + Manager approval.
+table: gold.dim_customer
+version: 1.0.0
+owner: de2
+layer: gold
+lakehouse: lh_gold
+description: Customers (pseudonymised), history of location changes.
+grain: one row per customer_pseudo_id per version
+load: merge
+source: silver.customer
+scd: '2'
+primary_key: [customer_key]
+business_key: [customer_pseudo_id]
+foreign_keys:
+- {column: geography_key, ref: gold.dim_geography.geography_key}
+unknown_member: true
+columns:
+- {name: customer_key, type: bigint, nullable: false, description: 'Surrogate key: xxhash64(customer_pseudo_id, valid_from); -1 = unknown'}
+- {name: customer_pseudo_id, type: string, nullable: false}
+- {name: geography_key, type: bigint, nullable: false}
+- {name: region_code, type: string, nullable: false, description: RLS column (SPEC §4a)}
+- {name: first_order_date, type: date, nullable: false}
+- {name: valid_from, type: timestamp, nullable: false}
+- {name: valid_to, type: timestamp, nullable: false, description: 9999-12-31 for the current row}
+- {name: is_current, type: boolean, nullable: false}
+- {name: row_hash, type: string, nullable: false, description: sha2 of tracked attributes}
+- {name: _updated_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+partition_by: []
+delta_properties: {delta.enableChangeDataFeed: true, delta.logRetentionDuration: interval 7 days, delta.deletedFileRetentionDuration: interval 2 days}
