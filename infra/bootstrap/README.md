@@ -42,3 +42,21 @@ Smart App Control blocks the `fab.exe` launcher, so use the wrapper:
 .\infra\bin\fab.cmd auth login
 .\infra\bin\fab.cmd ls
 ```
+
+## Agent read access to Dev/Test data (issue #18)
+
+Workspace **Viewer** does not grant OneLake file reads. `grant_read.py` adds one OneLake data access role `AgentRead` per lakehouse. Its members are the agent service principals that the SPEC §4a matrix allows. Existing roles such as `DefaultReader` are kept, and Prod is never touched.
+
+```powershell
+.\.venv\Scripts\python.exe infra\bootstrap\grant_read.py --dry-run
+.\.venv\Scripts\python.exe infra\bootstrap\grant_read.py      # re-run after each release that adds lakehouses
+```
+
+- **Sign-in:** it runs as you in a browser and caches the sign-in. Azure CLI's Windows login broker is blocked by Smart App Control on this laptop, so this script doesn't use Azure CLI.
+- **Verified in Dev on 2026-11-25:**
+
+| Agent | lh_bronze | lh_silver | lh_gold |
+|---|---|---|---|
+| Manager, DE1, DE2 | read | read | read |
+| DS | denied | read | read |
+| BI | denied | denied | read |
