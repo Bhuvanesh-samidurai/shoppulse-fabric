@@ -3,3 +3,5 @@ pyarrow>=17
 pyyaml>=6.0
 kaggle>=1.8
 six>=1.16
+azure-identity>=1.19
+azure-storage-file-datalake>=12.17
