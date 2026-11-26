@@ -34,6 +34,7 @@ from generator.geography import (
     place_for,
     warehouse_for,
 )
+from generator.holidays import holiday_rows
 
 BRL_TO_EUR = 0.25
 REDUCED_VAT_CATEGORIES = {"livros_interesse_geral", "livros_tecnicos", "livros_importados", "alimentos", "alimentos_bebidas"}
@@ -175,6 +176,7 @@ def relocate(src: dict[str, pd.DataFrame], sample: float = 1.0, target: dt.date 
     cat = src["categories"].rename(columns={"product_category_name": "category_code", "product_category_name_english": "category_en"})
     cat["category_de"] = None
     out["ref_category_translation"] = cat[["category_code", "category_en", "category_de"]]
+    out["ref_holiday_de"] = pd.DataFrame(holiday_rows())
     return out
 
 

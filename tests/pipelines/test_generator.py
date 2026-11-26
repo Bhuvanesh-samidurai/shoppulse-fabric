@@ -189,3 +189,20 @@ def test_event_payloads_match_bronze_contracts(full):
 def test_carrier_choice_is_stable():
     assert carrier_for("o1", "Nord") == carrier_for("o1", "Nord")
     assert {carrier_for(f"o{i}", "West") for i in range(200)} == {"DHL", "DPD", "HERMES"}
+
+
+# ------------------------------------------------------------------ reference data (#25)
+def test_easter_and_national_holidays():
+    from generator.holidays import easter, holiday_rows, national
+    assert easter(2025) == dt.date(2025, 4, 20) and easter(2026) == dt.date(2026, 4, 5)
+    assert len(national(2026)) == 9
+    rows = holiday_rows(2026, 2026)
+    assert {r["scope"] for r in rows} <= set(geo.REGIONS) | {"DE"}
+    assert {"holiday_date": dt.date(2026, 10, 31), "holiday_name": "Reformationstag", "scope": "HH"} in rows
+    assert len({(r["holiday_date"], r["scope"]) for r in rows}) == len(rows)  # PK unique
+
+
+@pytest.mark.parametrize("ref", ["ref_geography_de", "ref_category_translation", "ref_holiday_de"])
+def test_reference_outputs_match_bronze_contracts(full, ref):
+    meta = {"_ingested_at", "_source", "_batch_id"}
+    assert list(full[ref].columns) == [c for c in contract_columns(ref) if c not in meta]

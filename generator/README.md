@@ -14,6 +14,8 @@ Turns the public Olist dataset into a German online retailer and replays it as l
 .\.venv\Scripts\python.exe -m generator.download                 # Olist into generator/data/raw (Kaggle key from infra/.env)
 .\.venv\Scripts\python.exe -m generator.relocate --sample 0.05   # Dev/feature set -> generator/data/out/sample_0.05/
 .\.venv\Scripts\python.exe -m generator.relocate --sample 1.0    # Test/Prod set
+.\.venv\Scripts\python.exe -m generator.onelake --agent de1 --what ref   # upload ref_* to the agent's lh_bronze Files/landing/ref
+# then run nb_ingest_ref in that workspace -> bronze.ref_geography_de, ref_category_translation, ref_holiday_de
 ```
 
 `generator/data/` is git-ignored. Data never goes into the repo.
