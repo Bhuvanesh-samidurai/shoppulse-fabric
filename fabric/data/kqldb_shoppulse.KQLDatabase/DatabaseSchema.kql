@@ -1,0 +1,9 @@
+// kqldb_shoppulse schema (owner: DE1). Applied by fabric-cicd on every deploy. F2 rules: 3-day retention, 1-day hot cache.
+.create-merge table wms_event (event_id:string, event_type:string, event_ts:datetime, warehouse_code:string, order_id:string, item_no:int, material_id:string, quantity:int, reason_code:string, event_date:datetime)
+.create-merge table carrier_event (event_id:string, tracking_id:string, order_id:string, carrier_code:string, status:string, event_ts:datetime, postal_code:string, delay_reason:string, event_date:datetime)
+.alter table wms_event policy retention @'{"SoftDeletePeriod":"3.00:00:00","Recoverability":"Disabled"}'
+.alter table carrier_event policy retention @'{"SoftDeletePeriod":"3.00:00:00","Recoverability":"Disabled"}'
+.alter table wms_event policy caching hot = 1d
+.alter table carrier_event policy caching hot = 1d
+.alter table wms_event policy streamingingestion enable
+.alter table carrier_event policy streamingingestion enable

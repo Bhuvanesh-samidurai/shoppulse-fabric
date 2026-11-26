@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Eventstream",
+    "displayName": "es-wms",
+    "description": "Warehouse (WMS) events from the replayer -> Bronze landing + Eventhouse. Owner: DE1."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "1cb1d5a4-dc6b-5ebd-a6d5-36786b22f39f"
+  }
+}

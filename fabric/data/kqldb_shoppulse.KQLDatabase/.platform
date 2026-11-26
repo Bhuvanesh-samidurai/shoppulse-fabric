@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "KQLDatabase",
+    "displayName": "kqldb_shoppulse",
+    "description": "WMS and carrier events, last 3 days (hot path). Owner: DE1."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "7d9d94cd-d063-5887-bacd-17d1148aba95"
+  }
+}

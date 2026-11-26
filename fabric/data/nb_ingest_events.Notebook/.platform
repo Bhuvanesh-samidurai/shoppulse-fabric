@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_ingest_events",
+    "description": "Micro-batch: Eventstream landing tables -> bronze.wms_event / bronze.carrier_event (typed to contract, deduped on event_id). Owner: DE1."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "c120315f-3928-4ba3-ac9c-a18b5e3e3092"
+  }
+}

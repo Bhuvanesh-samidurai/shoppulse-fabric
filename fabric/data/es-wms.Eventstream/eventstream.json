@@ -1,0 +1,70 @@
+{
+  "compatibilityLevel": "1.0",
+  "sources": [
+    {
+      "name": "ReplayerEndpoint",
+      "type": "CustomEndpoint",
+      "properties": {}
+    }
+  ],
+  "streams": [
+    {
+      "name": "es-wms-stream",
+      "type": "DefaultStream",
+      "properties": {},
+      "inputNodes": [
+        {
+          "name": "ReplayerEndpoint"
+        }
+      ]
+    }
+  ],
+  "operators": [],
+  "destinations": [
+    {
+      "name": "BronzeLanding",
+      "type": "Lakehouse",
+      "inputNodes": [
+        {
+          "name": "es-wms-stream"
+        }
+      ],
+      "properties": {
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "itemId": "2e71c95f-c50a-5d10-b77a-2d042367f6ff",
+        "schema": "dbo",
+        "deltaTable": "landing_wms_event",
+        "minimumRows": 100000,
+        "maximumDurationInSeconds": 120,
+        "inputSerialization": {
+          "type": "Json",
+          "properties": {
+            "encoding": "UTF8"
+          }
+        }
+      }
+    },
+    {
+      "name": "EventhouseHot",
+      "type": "Eventhouse",
+      "inputNodes": [
+        {
+          "name": "es-wms-stream"
+        }
+      ],
+      "properties": {
+        "dataIngestionMode": "ProcessedIngestion",
+        "workspaceId": "00000000-0000-0000-0000-000000000000",
+        "itemId": "7d9d94cd-d063-5887-bacd-17d1148aba95",
+        "databaseName": "7d9d94cd-d063-5887-bacd-17d1148aba95",
+        "tableName": "wms_event",
+        "inputSerialization": {
+          "type": "Json",
+          "properties": {
+            "encoding": "UTF8"
+          }
+        }
+      }
+    }
+  ]
+}

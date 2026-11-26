@@ -137,6 +137,22 @@ def order_window(tables: dict[str, pd.DataFrame], start: pd.Timestamp, end: pd.T
     }
 
 
+def window_events(win: dict[str, pd.DataFrame]) -> list[Event]:
+    """All WMS + carrier events for the orders in a window (see order_window)."""
+    from generator.geography import REGIONS
+
+    cust = win["customer"].set_index("customer_id")
+    score = win["review"].drop_duplicates("order_id").set_index("order_id")["score"]
+    items_by_order = {k: g for k, g in win["sales_order_item"].groupby("order_id")}
+    events: list[Event] = []
+    for _, o in win["sales_order_header"].iterrows():
+        c = cust.loc[o["customer_id"]]
+        events += order_events(o, items_by_order.get(o["order_id"], win["sales_order_item"].iloc[0:0]),
+                               c["postal_code"], REGIONS[c["region_code"]][1],
+                               int(score[o["order_id"]]) if o["order_id"] in score.index else None)
+    return events
+
+
 def feature_sqldb(agent: str):
     """Server, database and credential for sqldb_shop in the agent's feature workspace."""
     import requests
@@ -168,11 +184,28 @@ def main() -> None:
     s.add_argument("--from", dest="start", required=True, type=pd.Timestamp)
     s.add_argument("--to", dest="end", required=True, type=pd.Timestamp)
     s.add_argument("--dir", type=pathlib.Path, default=OUT / "sample_0.05")
+    e = sub.add_parser("events", help="send the WMS + carrier events of one order window to the agent's Eventstreams")
+    e.add_argument("--agent", required=True, choices=["mgr", "de1", "de2", "bi", "ds"])
+    e.add_argument("--from", dest="start", required=True, type=pd.Timestamp)
+    e.add_argument("--to", dest="end", required=True, type=pd.Timestamp)
+    e.add_argument("--dir", type=pathlib.Path, default=OUT / "sample_0.05")
     a = ap.parse_args()
 
     tables = {n: pd.read_parquet(a.dir / f"{n}.parquet") for n in
               ["customer", "material", "vendor", "sales_order_header", "sales_order_item", "payment", "review"]}
     win = order_window(tables, a.start, a.end)
+    if a.cmd == "events":
+        from generator.eventsink import EventstreamSink
+        from generator.onelake import credential
+
+        evs = window_events(win)
+        sink = EventstreamSink(f"shoppulse-feat-{a.agent}", credential(a.agent))
+        try:
+            sent = sink.send(evs)
+        finally:
+            sink.close()
+        print(json.dumps({"window": [str(a.start), str(a.end)], "orders": len(win["sales_order_header"]), "sent": sent}, indent=1))
+        return
     server, database, cred = feature_sqldb(a.agent)
     sink = SqlSink(server, database, cred).connect()
     try:

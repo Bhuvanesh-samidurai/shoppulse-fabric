@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Eventstream",
+    "displayName": "es-carrier",
+    "description": "Carrier tracking events from the replayer -> Bronze landing + Eventhouse. Owner: DE1."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "c9b199c9-c604-5e5c-b2e6-063b27819ced"
+  }
+}

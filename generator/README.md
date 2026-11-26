@@ -66,6 +66,39 @@ Agents may only write to their own feature workspace (SPEC §4a). Live data for 
 
 The secrets stay with Bhuvanesh (or the VPS later), never with an agent.
 
+## EventstreamSink: WMS and carrier events (built, #27)
+
+```powershell
+.\.venv\Scripts\python.exe -m generator.replay events --agent de1 --from 2024-12-01 --to 2025-02-01
+```
+
+**Data path:**
+
+```
+replayer ──► es-wms / es-carrier (custom endpoint)
+               ├─► EventhouseHot  ─► kqldb_shoppulse.wms_event / carrier_event      (~30 s, hot path, 3-day retention)
+               └─► BronzeLanding  ─► lh_bronze.landing_wms_event / landing_carrier_event   (flush every 2 min)
+                                        └─ nb_ingest_events (micro-batch) ─► bronze.wms_event / bronze.carrier_event (contract)
+```
+
+**Why a landing step:** Eventstream's Lakehouse destination writes its own schema: strings for timestamps and dates, `long` for ints, plus `EventProcessedUtcTime`, `PartitionId` and `EventEnqueuedUtcTime`. It has no `date` type, so it can't write into the contract tables directly. `nb_ingest_events` handles the conversion:
+- **Typing:** casts to the contract types.
+- **Metadata:** sets `_ingested_at` = `EventEnqueuedUtcTime`.
+- **Quarantine:** bad rows go to a quarantine table.
+- **Dedupe:** MERGE on `event_id`.
+- **Incremental:** it runs from the last watermark in `ops.run_log`, with a 10-minute overlap.
+
+**Security:** the endpoint connection string is fetched at runtime with the agent's identity. It stays in memory only and is never printed or saved.
+
+**Measured in `shoppulse-feat-de1` (2026-11-26), 174 events sent twice:**
+
+| Where | Result |
+|---|---|
+| KQL | 81 / 93 rows within 45 s |
+| Landing | 162 / 186 rows (both sends) |
+| Bronze contract tables | 81 / 93 unique events |
+| Second ingest run | inserted 0 |
+
 ## Replayer design (`replay.py`; sinks are built in the next issue)
 
 ```
