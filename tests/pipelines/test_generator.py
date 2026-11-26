@@ -206,3 +206,41 @@ def test_easter_and_national_holidays():
 def test_reference_outputs_match_bronze_contracts(full, ref):
     meta = {"_ingested_at", "_source", "_batch_id"}
     assert list(full[ref].columns) == [c for c in contract_columns(ref) if c not in meta]
+
+
+# ------------------------------------------------------------------ SqlSink (#26)
+def test_merge_sql_updates_only_changed_rows():
+    from generator.sqlsink import KEYS, ORDER, merge_sql
+    sql = merge_sql("sales_order_item")
+    assert "ON t.[order_id] = s.[order_id] AND t.[item_no] = s.[item_no]" in sql
+    assert "WHEN MATCHED AND EXISTS (SELECT" in sql and "EXCEPT SELECT" in sql  # no-op when nothing differs
+    assert "WHEN NOT MATCHED BY TARGET THEN INSERT" in sql and "OUTPUT $action" in sql
+    assert ORDER.index("customer") < ORDER.index("sales_order_header") < ORDER.index("sales_order_item")
+    assert set(KEYS) == set(COLUMNS)
+
+
+def test_rows_are_typed_for_sql(full):
+    from decimal import Decimal
+
+    from generator.sqlsink import SQL_TYPES, input_sizes, to_rows
+    for table in COLUMNS:
+        assert all(c in SQL_TYPES for c in COLUMNS[table])
+        assert len(input_sizes(table)) == len(COLUMNS[table])
+    soi = to_rows(full["sales_order_item"], "sales_order_item")
+    assert isinstance(soi[0][COLUMNS["sales_order_item"].index("net_price")], Decimal)
+    soh = to_rows(full["sales_order_header"], "sales_order_header")
+    i = COLUMNS["sales_order_header"].index("delivered_ts")
+    assert any(r[i] is None for r in soh)  # NaT -> NULL
+    assert all(r[i] is None or r[i].microsecond % 1000 == 0 for r in soh)  # DATETIME2(3)
+
+
+def test_order_window_keeps_foreign_keys(full):
+    from generator.replay import order_window
+    soh = full["sales_order_header"]
+    start = soh["purchase_ts"].min()
+    w = order_window(full, start, start + pd.Timedelta(days=10))
+    assert 0 < len(w["sales_order_header"]) < len(soh)
+    assert set(w["sales_order_header"]["customer_id"]) <= set(w["customer"]["customer_id"])
+    assert set(w["sales_order_item"]["material_id"]) <= set(w["material"]["material_id"])
+    assert set(w["sales_order_item"]["vendor_id"]) <= set(w["vendor"]["vendor_id"])
+    assert set(w["review"]["order_id"]) <= set(w["sales_order_header"]["order_id"])

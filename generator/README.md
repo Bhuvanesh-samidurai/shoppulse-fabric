@@ -36,6 +36,36 @@ Turns the public Olist dataset into a German online retailer and replays it as l
 
 **Output:** one parquet file per shop table, with the exact columns of `contracts/bronze/shop_*.yml` (tested), plus `ref_geography_de` and `ref_category_translation`. Each run also writes `_manifest.json` with row counts.
 
+## SqlSink: shop rows into sqldb_shop (built, #26)
+
+```powershell
+.\.venv\Scripts\python.exe -m generator.replay sql-load --agent de1 --from 2025-02-01 --to 2025-08-01
+```
+
+**How it writes:**
+- MERGEs the orders purchased in the window, plus every customer, product and seller they reference, into the agent's own `sqldb_shop`.
+- Order is parent-first: customer, material, vendor, header, item, payment, review.
+- Each table goes through a `#staging` table and a MERGE on the primary key. A matched row is updated only when a value differs.
+
+**Behaviour:**
+- **Idempotent:** re-sending a window gives `INSERT 0 / UPDATE 0`.
+- **Partial failure:** a failed run can leave earlier tables committed. A re-run completes the rest.
+- **Parameter types are declared explicitly.** Otherwise pyodbc's `fast_executemany` guesses VARCHAR for a numeric column whose first value is NULL.
+- **Connection retry:** connect retries for up to 4 minutes while the database wakes after a capacity resume.
+
+**Measured in `shoppulse-feat-de1` (2026-11-26):**
+- 4,000 rows load in about 15 s.
+- The SQL DB mirror shows them in the `bronze.shop_*` shortcuts within about 25 s.
+
+### Identity for Dev/Test/Prod (decision needed)
+Agents may only write to their own feature workspace (SPEC §4a). Live data for Dev, Test and Prod needs a writer.
+
+**Proposal:** one service principal per environment, `sp-replayer-<env>`, with only:
+- `db_datareader` + `db_datawriter` on that environment's `sqldb_shop` (no DDL, no workspace role beyond Viewer);
+- the Eventstream custom-endpoint keys (#27).
+
+The secrets stay with Bhuvanesh (or the VPS later), never with an agent.
+
 ## Replayer design (`replay.py`; sinks are built in the next issue)
 
 ```
