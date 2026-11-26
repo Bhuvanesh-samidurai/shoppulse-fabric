@@ -111,17 +111,76 @@ def order_events(order: pd.Series, items: pd.DataFrame, postal_code: str, macro_
     return sorted(events, key=lambda e: e.ts)
 
 
-class SqlSink:
-    """Next issue: MERGE shop rows into sqldb_shop (mssql-python or pyodbc, token auth as the agent/CI SP),
-    batched per virtual minute, ordered parent-first (customer, material, vendor, header, item, payment, review)."""
-
-    def write(self, table: str, rows: pd.DataFrame) -> None:
-        raise NotImplementedError("SqlSink is designed in generator/README.md; built in the replayer issue")
-
-
 class EventstreamSink:
     """Next issue: send JSON events to an Eventstream custom endpoint (Event Hub protocol, azure-eventhub),
     connection string from EVENTSTREAM_<ENV>_<WMS|CARRIER>_CONNECTION_STRING, batches of <= 500, partition key = order_id."""
 
     def send(self, events: list[Event]) -> None:
         raise NotImplementedError("EventstreamSink is designed in generator/README.md; built in the replayer issue")
+
+
+# ------------------------------------------------------------------ order windows + CLI (#26; virtual clock in #28)
+def order_window(tables: dict[str, pd.DataFrame], start: pd.Timestamp, end: pd.Timestamp) -> dict[str, pd.DataFrame]:
+    """Shop rows for orders purchased in [start, end), plus every customer, product and seller they reference."""
+    soh = tables["sales_order_header"]
+    orders = soh[(soh["purchase_ts"] >= start) & (soh["purchase_ts"] < end)]
+    ids = set(orders["order_id"])
+    items = tables["sales_order_item"][tables["sales_order_item"]["order_id"].isin(ids)]
+    return {
+        "customer": tables["customer"][tables["customer"]["customer_id"].isin(set(orders["customer_id"]))],
+        "material": tables["material"][tables["material"]["material_id"].isin(set(items["material_id"]))],
+        "vendor": tables["vendor"][tables["vendor"]["vendor_id"].isin(set(items["vendor_id"]))],
+        "sales_order_header": orders,
+        "sales_order_item": items,
+        "payment": tables["payment"][tables["payment"]["order_id"].isin(ids)],
+        "review": tables["review"][tables["review"]["order_id"].isin(ids)],
+    }
+
+
+def feature_sqldb(agent: str):
+    """Server, database and credential for sqldb_shop in the agent's feature workspace."""
+    import requests
+
+    from generator.onelake import credential
+
+    cred = credential(agent)
+    h = {"Authorization": "Bearer " + cred.get_token("https://api.fabric.microsoft.com/.default").token}
+    api = "https://api.fabric.microsoft.com/v1"
+    ws = next(w["id"] for w in requests.get(f"{api}/workspaces", headers=h, timeout=60).json()["value"]
+              if w["displayName"] == f"shoppulse-feat-{agent}")
+    db = next(d for d in requests.get(f"{api}/workspaces/{ws}/sqlDatabases", headers=h, timeout=60).json()["value"]
+              if d["displayName"] == "sqldb_shop")
+    return db["properties"]["serverFqdn"], db["properties"]["databaseName"], cred
+
+
+def main() -> None:
+    import argparse
+    import json
+    import pathlib
+
+    from generator import OUT
+    from generator.sqlsink import SqlSink
+
+    ap = argparse.ArgumentParser(description="ShopPulse replayer")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("sql-load", help="MERGE the shop rows of one order window into the agent's sqldb_shop")
+    s.add_argument("--agent", required=True, choices=["mgr", "de1", "de2", "bi", "ds"])
+    s.add_argument("--from", dest="start", required=True, type=pd.Timestamp)
+    s.add_argument("--to", dest="end", required=True, type=pd.Timestamp)
+    s.add_argument("--dir", type=pathlib.Path, default=OUT / "sample_0.05")
+    a = ap.parse_args()
+
+    tables = {n: pd.read_parquet(a.dir / f"{n}.parquet") for n in
+              ["customer", "material", "vendor", "sales_order_header", "sales_order_item", "payment", "review"]}
+    win = order_window(tables, a.start, a.end)
+    server, database, cred = feature_sqldb(a.agent)
+    sink = SqlSink(server, database, cred).connect()
+    try:
+        result = sink.write_all(win)
+    finally:
+        sink.close()
+    print(json.dumps({"window": [str(a.start), str(a.end)], "rows": {k: len(v) for k, v in win.items()}, "merge": result}, indent=1))
+
+
+if __name__ == "__main__":
+    main()
