@@ -189,10 +189,41 @@ def main() -> None:
     e.add_argument("--from", dest="start", required=True, type=pd.Timestamp)
     e.add_argument("--to", dest="end", required=True, type=pd.Timestamp)
     e.add_argument("--dir", type=pathlib.Path, default=OUT / "sample_0.05")
+    r = sub.add_parser("run", help="live replay with virtual clock + checkpoint (see generator/live.py)")
+    r.add_argument("--agent", required=True, choices=["mgr", "de1", "de2", "bi", "ds"])
+    g = r.add_mutually_exclusive_group(required=True)
+    g.add_argument("--start", type=pd.Timestamp, help="virtual start time")
+    g.add_argument("--resume", action="store_true", help="continue from generator/data/state/<agent>.json")
+    r.add_argument("--speed", type=float, default=60, help="virtual seconds per real second (Dev: 60)")
+    r.add_argument("--minutes", type=float, default=10)
+    r.add_argument("--tick", type=float, default=20, help="seconds between ticks")
+    r.add_argument("--dir", type=pathlib.Path, default=OUT / "sample_0.05")
     a = ap.parse_args()
 
     tables = {n: pd.read_parquet(a.dir / f"{n}.parquet") for n in
               ["customer", "material", "vendor", "sales_order_header", "sales_order_item", "payment", "review"]}
+    if a.cmd == "run":
+        from generator.eventsink import EventstreamSink
+        from generator.live import load_checkpoint, run
+        from generator.onelake import credential
+
+        start = load_checkpoint(a.agent) if a.resume else a.start
+        if start is None:
+            raise SystemExit(f"no checkpoint for {a.agent}: start with --start")
+        server, database, cred = feature_sqldb(a.agent)
+        sql = SqlSink(server, database, cred, max_wait_s=60).connect()
+        events = EventstreamSink(f"shoppulse-feat-{a.agent}", credential(a.agent))
+        print(f"live replay: agent {a.agent}, virtual start {start}, speed {a.speed:g}x, {a.minutes:g} min", flush=True)
+        try:
+            summary = run(tables, sql, events, a.agent, start, a.speed, a.minutes, a.tick, log=lambda m: print(m, flush=True))
+        finally:
+            for s in (sql, events):
+                try:
+                    s.close()
+                except Exception as e:  # noqa: BLE001 - closing after a capacity pause may fail; nothing to keep
+                    print(f"close: {type(e).__name__}")
+        print(json.dumps(summary, indent=1))
+        raise SystemExit(2 if summary["stopped"] else 0)
     win = order_window(tables, a.start, a.end)
     if a.cmd == "events":
         from generator.eventsink import EventstreamSink

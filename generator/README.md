@@ -99,6 +99,40 @@ replayer ──► es-wms / es-carrier (custom endpoint)
 | Bronze contract tables | 81 / 93 unique events |
 | Second ingest run | inserted 0 |
 
+## Live replay with checkpoint/resume (built, #28)
+
+```powershell
+.\.venv\Scripts\python.exe -m generator.replay run --agent de1 --start 2025-08-01 --speed 1440 --minutes 10
+.\.venv\Scripts\python.exe -m generator.replay run --agent de1 --resume --speed 1440 --minutes 10
+.\.venv\Scripts\python.exe -m generator.e2e --agent de1 --from 2025-08-01 --to <checkpoint>    # after nb_ingest_events
+.\.venv\Scripts\python.exe -m generator.capacity status|pause|resume                            # as Bhuvanesh (cached sign-in)
+```
+
+**How it runs:**
+- **Virtual clock:** the clock advances `--speed` × real time. Every tick (20 s by default), the shop rows and events whose business timestamp fell into that window are sent.
+- **Progressive order status:** an order header is MERGEd again at each milestone. Later milestones stay NULL, and the status is whatever it was at that moment. The e2e check verifies that no order shows a future milestone.
+- **Checkpoint:** stored in `generator/data/state/<agent>.json`. It moves only after both SQL and the events of a tick succeed. On any failure the run stops (exit code 2) and `--resume` replays the undelivered window. SQL is MERGE and Bronze dedups on `event_id`, so the replay is safe.
+
+**Capacity pause, tested 2026-11-26 in `shoppulse-feat-de1`:**
+1. The capacity was paused mid-run. The 8th tick's events were rejected ("CBS Token authentication failed"), and the replayer stopped at checkpoint virtual 2025-08-03 17:00.
+2. After resume, `--resume` continued from exactly that point and ran 16 more ticks.
+3. **Finding:** after a capacity resume, Eventstream *sources* are Running again but *destinations* stay **Paused**. Events are accepted and kept (1-day retention) but not delivered.
+   - Resuming the destinations `WhenLastStopped` delivered everything.
+   - `EventstreamSink` now does this automatically on start (`resume_paused_destinations`).
+4. **End-to-end over virtual 1–10 Aug 2025:**
+
+| Check | Result |
+|---|---|
+| SQL | 40 orders, 43 items |
+| Future milestones | 0 |
+| Bronze mirror | 40 orders |
+| KQL distinct events | 158 WMS / 244 carrier |
+| Bronze event tables | 158 / 244 |
+
+All 8 checks OK.
+
+**KQL hot path:** a replayed window can reach KQL twice. KQL queries and dashboards count `dcount(event_id)` or use `arg_max` per `event_id`.
+
 ## Replayer design (`replay.py`; sinks are built in the next issue)
 
 ```
