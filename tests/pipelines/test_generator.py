@@ -288,3 +288,38 @@ def test_event_payloads_encode_to_json(full):
     assert evs
     d = _json.loads(encode(evs[0].payload))
     assert _re.fullmatch(r"\d{4}-\d{2}-\d{2}", d["event_date"]) and "T" in d["event_ts"]
+
+
+# ------------------------------------------------------------------ live replay (#28)
+def test_header_snapshot_hides_future_milestones(full):
+    from generator.live import header_snapshot
+    soh = full["sales_order_header"]
+    o = soh[(soh["order_status"] == "delivered")].iloc[[0]]
+    before_ship = o["carrier_handover_ts"].iloc[0] - pd.Timedelta(minutes=1)
+    s = header_snapshot(o, before_ship).iloc[0]
+    assert s["order_status"] == "approved" and pd.isna(s["carrier_handover_ts"]) and pd.isna(s["delivered_ts"])
+    s = header_snapshot(o, o["delivered_ts"].iloc[0]).iloc[0]
+    assert s["order_status"] == "delivered" and s["changed_at"] == o["delivered_ts"].iloc[0]
+    c = soh[soh["order_status"] == "canceled"].iloc[[0]]
+    assert header_snapshot(c, c["purchase_ts"].iloc[0]).iloc[0]["order_status"] == "canceled"
+
+
+def test_ticks_partition_rows_and_events(full):
+    from generator.live import tick_events, tick_rows
+    from generator.replay import window_events
+    soh = full["sales_order_header"]
+    t0, t2 = soh["purchase_ts"].min(), soh["purchase_ts"].max() + pd.Timedelta(days=30)
+    t1 = t0 + (t2 - t0) / 2
+    a, b = tick_rows(full, t0, t1), tick_rows(full, t1, t2)
+    assert set(a["sales_order_item"]["order_id"]).isdisjoint(b["sales_order_item"]["order_id"])  # each order's items sent once
+    assert len(a["sales_order_item"]) + len(b["sales_order_item"]) == len(full["sales_order_item"])
+    evs = window_events(full)
+    assert len(tick_events(evs, t0, t1)) + len(tick_events(evs, t1, t2)) == len([e for e in evs if t0 <= e.ts < t2])
+
+
+def test_checkpoint_roundtrip(tmp_path, monkeypatch):
+    from generator import live
+    monkeypatch.setattr(live, "STATE", tmp_path)
+    assert live.load_checkpoint("de1") is None
+    live.save_checkpoint("de1", pd.Timestamp("2025-08-03 17:00"), {"events": {"wms": 1}})
+    assert live.load_checkpoint("de1") == pd.Timestamp("2025-08-03 17:00")

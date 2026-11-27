@@ -47,10 +47,30 @@ def endpoint_connection(workspace: str, eventstream: str, credential) -> tuple[s
     return conn["accessKeys"]["primaryConnectionString"], conn["eventHubName"]
 
 
+def resume_paused_destinations(workspace: str, credential, log=print) -> list[str]:
+    """After a capacity pause, Eventstream sources come back Running but destinations stay Paused: events are
+    accepted and retained (retentionTimeInDays) but not delivered. Resume them WhenLastStopped so the retained
+    events are delivered (verified in #28: nothing lost across a pause)."""
+    h = {"Authorization": "Bearer " + credential.get_token("https://api.fabric.microsoft.com/.default").token}
+    ws = next(w["id"] for w in requests.get(f"{API}/workspaces", headers=h, timeout=60).json()["value"] if w["displayName"] == workspace)
+    resumed = []
+    for es in requests.get(f"{API}/workspaces/{ws}/eventstreams", headers=h, timeout=60).json()["value"]:
+        topo = requests.get(f"{API}/workspaces/{ws}/eventstreams/{es['id']}/topology", headers=h, timeout=60).json()
+        for d in topo.get("destinations", []):
+            if d.get("status") == "Paused":
+                r = requests.post(f"{API}/workspaces/{ws}/eventstreams/{es['id']}/destinations/{d['id']}/resume",
+                                  headers=h, json={"startType": "WhenLastStopped"}, timeout=60)
+                resumed.append(f"{es['displayName']}/{d['name']}={r.status_code}")
+    if resumed:
+        log(f"resumed paused Eventstream destinations: {', '.join(resumed)}")
+    return resumed
+
+
 class EventstreamSink:
     def __init__(self, workspace: str, credential):
         from azure.eventhub import EventHubProducerClient
 
+        resume_paused_destinations(workspace, credential)
         self.producers = {}
         for kind, name in STREAMS.items():
             cs, hub = endpoint_connection(workspace, name, credential)
