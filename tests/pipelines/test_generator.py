@@ -244,3 +244,47 @@ def test_order_window_keeps_foreign_keys(full):
     assert set(w["sales_order_item"]["material_id"]) <= set(w["material"]["material_id"])
     assert set(w["sales_order_item"]["vendor_id"]) <= set(w["vendor"]["vendor_id"])
     assert set(w["review"]["order_id"]) <= set(w["sales_order_header"]["order_id"])
+
+
+# ------------------------------------------------------------------ Eventstreams (#27)
+import json as _json
+import re as _re
+
+
+def _platform(path):
+    return _json.loads((ROOT / "fabric" / "data" / path / ".platform").read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("es,table", [("es-wms", "wms_event"), ("es-carrier", "carrier_event")])
+def test_eventstream_definitions_are_portable(es, table):
+    topo = _json.loads((ROOT / "fabric" / "data" / f"{es}.Eventstream" / "eventstream.json").read_text(encoding="utf-8"))
+    lh = _platform("lh_bronze.Lakehouse")["config"]["logicalId"]
+    kql = _platform("kqldb_shoppulse.KQLDatabase")["config"]["logicalId"]
+    names = [n["name"] for k in ("sources", "operators", "destinations") for n in topo[k]]
+    assert all(_re.fullmatch(r"[A-Za-z0-9]{3,63}", n) for n in names), names  # Eventstream node-name rule
+    assert [s["type"] for s in topo["streams"]] == ["DefaultStream"]
+    dest = {d["type"]: d["properties"] for d in topo["destinations"]}
+    zero = "00000000-0000-0000-0000-000000000000"
+    assert dest["Lakehouse"]["workspaceId"] == zero and dest["Lakehouse"]["itemId"] == lh  # fabric-cicd rewrites per env
+    assert dest["Lakehouse"]["deltaTable"] == f"landing_{table}"
+    assert dest["Eventhouse"]["itemId"] == kql and dest["Eventhouse"]["databaseName"] == kql  # engine DB name = KQL item id
+    assert dest["Eventhouse"]["tableName"] == table and dest["Eventhouse"]["dataIngestionMode"] == "ProcessedIngestion"
+
+
+def test_kql_schema_matches_event_contracts():
+    kql = (ROOT / "fabric" / "data" / "kqldb_shoppulse.KQLDatabase" / "DatabaseSchema.kql").read_text(encoding="utf-8")
+    meta = {"_ingested_at", "_source", "_batch_id"}
+    for table in ("wms_event", "carrier_event"):
+        cols = _re.search(rf"\.create-merge table {table} \((.*?)\)", kql).group(1)
+        assert [c.split(":")[0].strip() for c in cols.split(",")] == [c for c in contract_columns(table) if c not in meta]
+
+
+def test_event_payloads_encode_to_json(full):
+    from generator.eventsink import encode
+    from generator.replay import window_events
+    soh = full["sales_order_header"]
+    w = __import__("generator.replay", fromlist=["order_window"]).order_window(full, soh["purchase_ts"].min(), soh["purchase_ts"].max() + pd.Timedelta(days=1))
+    evs = window_events(w)
+    assert evs
+    d = _json.loads(encode(evs[0].payload))
+    assert _re.fullmatch(r"\d{4}-\d{2}-\d{2}", d["event_date"]) and "T" in d["event_ts"]

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Eventhouse",
+    "displayName": "eh_shoppulse",
+    "description": "Real-time hot path for WMS and carrier events (SPEC \u00a73). Owner: DE1."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "d07fd5bf-d39a-5032-83b0-6701b0b11e8a"
+  }
+}
